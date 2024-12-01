@@ -2,10 +2,11 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from app.models import RoomType, Image, Guest, Service, Reservation, Room
+from app.models import RoomType, Image, Guest, Service, Reservation, Room, ReservationRoom
 from django.contrib.auth.models import User
 from datetime import datetime
 from django.http import HttpResponse
+from django.db.models import Q
 
 
 def index(request):
@@ -137,6 +138,22 @@ def room(request):
 
 def room_detail(request):
     return render(request, 'room_detail.html')
+def about(request):
+    return render(request, 'about.html')
+
+
+def contact(request):
+    return render(request, 'contact.html')
+
+def service(request):
+    services = Service.objects.all()
+    
+    # Lấy hình ảnh đầu tiên cho từng dịch vụ
+    for service in services:
+        service.image = Image.objects.filter(service_id=service.id).first()  # service_id tương ứng với id của Service
+    
+    return render(request, 'service.html', {'services': services})
+
 
 def booking(request):
     room_types = RoomType.objects.all()
@@ -149,71 +166,114 @@ def booking(request):
     check_out = ''
     room_type_id = ''
     total_amount = 0
-    
+
+    # Nếu người dùng đã đăng nhập, lấy thông tin khách hàng
+    if request.user.is_authenticated:
+        guest = Guest.objects.filter(user_id=request.user.id).first()
+        if guest:
+            guest_name = guest.full_name
+            guest_email = guest.email
+            guest_phone = guest.phone_number
+            guest_id_card = guest.id_card
+
     if request.method == 'POST':
         # Lấy thông tin từ form
-        guest_name = request.POST.get('guest_name')
-        guest_email = request.POST.get('guest_email')
-        guest_phone = request.POST.get('guest_phone')
-        guest_id_card = request.POST.get('guest_id_card')
-        check_in = request.POST.get('check_in')
-        check_out = request.POST.get('check_out')
-        room_type_id = request.POST.get('room_type')
-        
-        # Kiểm tra xem check_in và check_out có giá trị hợp lệ không
-        if not check_in or not check_out:
-            return HttpResponse("Ngày nhận phòng và ngày trả phòng không được để trống.", status=400)
-        
-        # Tính toán số đêm
-        try:
-            num_nights = (datetime.strptime(check_out, '%Y-%m-%d') - datetime.strptime(check_in, '%Y-%m-%d')).days
-            if num_nights < 1:
-                return HttpResponse("Ngày trả phòng phải sau ngày nhận phòng.", status=400)
-        except ValueError:
-            return HttpResponse("Ngày tháng không hợp lệ. Vui lòng kiểm tra lại.", status=400)
+        guest_name = request.POST.get('guest_name', '').strip()
+        guest_email = request.POST.get('guest_email', '').strip()
+        guest_phone = request.POST.get('guest_phone', '').strip()
+        guest_id_card = request.POST.get('guest_id_card', '').strip()
+        check_in = request.POST.get('check_in', '').strip()
+        check_out = request.POST.get('check_out', '').strip()
+        room_type_id = request.POST.get('room_type', '').strip()
 
-        # Lấy loại phòng và tính tổng tiền
-        room_type = RoomType.objects.get(id=room_type_id)
-        total_amount = room_type.base_price * num_nights
-        
-        # Lấy tất cả các phòng còn trống của loại phòng đã chọn
-        rooms = Room.objects.filter(room_type_id=room_type_id, status='available')
-        
-        # Lưu thông tin khách hàng vào bảng guest nếu chưa có tài khoản
-        guest, created = Guest.objects.get_or_create(email=guest_email, defaults={
-            'full_name': guest_name,
-            'phone_number': guest_phone,
-            'id_card': guest_id_card
-        })
+        # Kiểm tra đầu vào và xử lý
+        if not guest_name or not guest_email or not guest_phone or not guest_id_card:
+            messages.error(request, "Vui lòng điền đầy đủ thông tin khách hàng.")
+        elif not check_in or not check_out:
+            messages.error(request, "Ngày nhận phòng và ngày trả phòng không được để trống.")
+        else:
+            try:
+                # Kiểm tra tính hợp lệ của ngày nhận và trả phòng
+                check_in_date = datetime.strptime(check_in, '%Y-%m-%d')
+                check_out_date = datetime.strptime(check_out, '%Y-%m-%d')
+                num_nights = (check_out_date - check_in_date).days
 
-        # Lưu thông tin đặt phòng vào bảng reservation
-        reservation = Reservation.objects.create(
-            guest=guest,
-            branch_id=rooms[0].branch_id,  # Lấy chi nhánh từ phòng đầu tiên
-            check_in_date=check_in,
-            check_out_date=check_out,
-            status='confirmed'
-        )
+                if num_nights < 1:
+                    messages.error(request, "Ngày trả phòng phải sau ngày nhận phòng.")
+                else:
+                    # Lấy loại phòng và danh sách phòng trống
+                    room_type = RoomType.objects.get(id=room_type_id)
+                    total_amount = room_type.base_price * num_nights
 
-        # Đánh dấu phòng là đã được đặt
-        for room in rooms:
-            room.status = 'booked'
-            room.save()
+                    # Lấy danh sách các phòng đã được đặt trong khoảng thời gian người dùng yêu cầu
+                    rooms_reserved = ReservationRoom.objects.filter(
+                        reservation__check_in_date__lt=check_out_date,
+                        reservation__check_out_date__gt=check_in_date
+                    ).values_list('room_id', flat=True)  # Lấy room_id từ bảng ReservationRoom
 
-        # Chuyển hướng đến trang xác nhận hoặc trang hóa đơn
-        return redirect('reservation_detail', reservation_id=reservation.id)
+                    # Lọc ra các phòng trống (chưa bị đặt trong thời gian này)
+                    rooms = Room.objects.filter(
+                        room_type_id=room_type_id
+                    ).exclude(id__in=rooms_reserved)  # Loại bỏ các phòng đã được đặt
 
-    else:  # Nếu là GET request
-        # Kiểm tra nếu người dùng đã đăng nhập
-        if request.user.is_authenticated:
-            guest = Guest.objects.filter(user_id=request.user.id).first()
-            if guest:
-                guest_name = guest.full_name
-                guest_email = guest.email
-                guest_phone = guest.phone_number
-                guest_id_card = guest.id_card
+                    if rooms.exists():
+                        # Tạo đặt phòng và cập nhật trạng thái phòng nếu người dùng xác nhận
+                        guest, created = Guest.objects.get_or_create(email=guest_email, defaults={
+                            'full_name': guest_name,
+                            'phone_number': guest_phone,
+                            'id_card': guest_id_card
+                        })
+                        reservation = Reservation.objects.create(
+                            guest=guest,
+                            branch_id=rooms[0].branch_id,
+                            check_in_date=check_in_date,
+                            check_out_date=check_out_date,
+                            status='confirmed'
+                        )
+                        for room in rooms:
+                            room.status = 'booked'
+                            room.save()
+                        messages.success(request, "Đặt phòng thành công!")
+                        return redirect('booking')  # Redirect to booking page to avoid resubmission
+                    else:
+                        messages.error(request, "Không có phòng trống phù hợp.")
+            except RoomType.DoesNotExist:
+                messages.error(request, "Loại phòng không hợp lệ.")
+            except ValueError:
+                messages.error(request, "Ngày tháng không hợp lệ. Vui lòng kiểm tra lại.")
+    else:  # Xử lý GET request
+        check_in = request.GET.get('check_in', '').strip()
+        check_out = request.GET.get('check_out', '').strip()
+        room_type_id = request.GET.get('room_type', '').strip()
+        if check_in and check_out and room_type_id:
+            try:
+                # Tính toán danh sách phòng trống
+                check_in_date = datetime.strptime(check_in, '%Y-%m-%d')
+                check_out_date = datetime.strptime(check_out, '%Y-%m-%d')
 
-    # Trả về form với các loại phòng và phòng trống, điền sẵn thông tin khách hàng nếu đã đăng nhập
+                # Lấy loại phòng
+                room_type = RoomType.objects.get(id=room_type_id)
+                total_amount = room_type.base_price * (
+                    (check_out_date - check_in_date).days
+                )
+
+                # Lấy danh sách các phòng đã được đặt trong khoảng thời gian người dùng yêu cầu
+                rooms_reserved = ReservationRoom.objects.filter(
+                    reservation__check_in_date__lt=check_out_date,
+                    reservation__check_out_date__gt=check_in_date
+                ).values_list('room_id', flat=True)  # Lấy room_id từ bảng ReservationRoom
+
+                # Lọc ra các phòng trống
+                rooms = Room.objects.filter(
+                    room_type_id=room_type_id
+                ).exclude(id__in=rooms_reserved)  # Loại bỏ các phòng đã được đặt
+
+            except RoomType.DoesNotExist:
+                messages.error(request, "Loại phòng không hợp lệ.")
+            except ValueError:
+                messages.error(request, "Ngày tháng không hợp lệ. Vui lòng kiểm tra lại.")
+
+    # Truyền dữ liệu về template
     context = {
         'room_types': room_types,
         'rooms': rooms,
@@ -221,35 +281,9 @@ def booking(request):
         'guest_email': guest_email,
         'guest_phone': guest_phone,
         'guest_id_card': guest_id_card,
-        'check_in': check_in,  # Thêm check_in vào context
-        'check_out': check_out,  # Thêm check_out vào context
-        'room_type_id': room_type_id,  # Thêm room_type_id vào context
-        'total_amount': total_amount,  # Thêm total_amount vào context
+        'check_in': check_in,
+        'check_out': check_out,
+        'room_type_id': room_type_id,
+        'total_amount': total_amount,
     }
-    
     return render(request, 'booking.html', context)
-
-
-
-
-
-def about(request):
-    return render(request, 'about.html')
-
-
-def contact(request):
-    return render(request, 'contact.html')
-
-
-from .models import Service, Image
-
-def service(request):
-    services = Service.objects.all()
-    
-    # Lấy hình ảnh đầu tiên cho từng dịch vụ
-    for service in services:
-        service.image = Image.objects.filter(service_id=service.id).first()  # service_id tương ứng với id của Service
-    
-    return render(request, 'service.html', {'services': services})
-
-
