@@ -1,0 +1,62 @@
+{% extends "index.html" %}
+{% load static %}
+{% block content %}
+<!-- Page Header Start -->
+<div class="container-fluid page-header mb-5 p-0" 
+     style="background-image: url({% static 'images/carousel-1.jpg' %}); background-position: center;">
+    <div class="container-fluid page-header-inner py-5">
+        <div class="container text-center pb-5">
+            <h1 class="display-3 text-white mb-3 animated slideInDown">Service</h1>
+        </div> 
+    </div>
+</div>
+<!-- Page Header End -->
+
+
+<!-- Service Start -->
+<div class="container-xxl py-5">
+    <div class="container">
+        <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+            <h6 class="section-title text-center text-primary text-uppercase">Our Services</h6>
+            <h1 class="mb-5">Explore Our <span class="text-primary text-uppercase">Services</span></h1>
+        </div>
+        <div class="row g-4">
+            {% for service in services %}
+            <div class="col-lg-4 col-md-6">
+                <div class="service-item rounded shadow-sm p-4">
+                    <div class="service-icon bg-light border rounded p-3 mb-4" style="height: 150px; overflow: hidden;">
+                        <div class="w-100 h-100 d-flex align-items-center justify-content-center">
+                            {% if service.image %}
+                            <img src="{{ service.image.image_file.url }}" 
+                                 alt="{{ service.service_name }}" 
+                                 class="img-fluid rounded" 
+                                 style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                            <img src="{% static 'images/default-service.jpg' %}" 
+                                 alt="Default Service" 
+                                 class="img-fluid rounded" 
+                                 style="width: 100%; height: 100%; object-fit: cover;">
+                            {% endif %}
+                        </div>
+                    </div>
+                    <h5 class="mb-3 text-center text-primary">{{ service.service_name }}</h5>
+                    <p class="text-body text-muted text-center mb-4">{{ service.description|truncatechars:80 }}</p>
+                    <div class="text-center">
+                        <span class="badge bg-primary text-white py-2 px-4" style="font-size: 1rem;">
+                            Price: ${{ service.price|default:"Contact Us" }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+        </div>        
+    </div>
+</div>
+<!-- Service End -->
+
+
+
+
+
+{% endblock %}

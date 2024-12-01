@@ -1,0 +1,52 @@
+{% extends "index.html" %}
+{% load static %}
+{% block content %}
+<!-- Page Header Start -->
+<div class="container-fluid page-header mb-5 p-0" 
+     style="background-image: url({% static 'images/carousel-1.jpg' %}); background-position: center;">
+    <div class="container-fluid page-header-inner py-5">
+        <div class="container text-center pb-5">
+            <h1 class="display-3 text-white mb-3 animated slideInDown">Contact Us</h1>
+        </div> 
+    </div>
+</div>
+<!-- Page Header End -->
+
+<!-- Contact Section Start -->
+<div class="container-xxl py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Contact Info -->
+            <div class="col-lg-6">
+                <h5 class="text-primary mb-4">Contact Details</h5>
+                <p><i class="fa fa-map-marker-alt text-primary me-3"></i>123 Street Name, City, Country</p>
+                <p><i class="fa fa-phone-alt text-primary me-3"></i>+1 234 567 890</p>
+                <p><i class="fa fa-envelope text-primary me-3"></i>info@example.com</p>
+            </div>
+            <!-- Map -->
+            <div class="col-lg-6">
+                <h5 class="text-primary mb-4">Our Location</h5>
+                <div id="map" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Contact Section End -->
+
+<script>
+    // Initialize Google Map
+    function initMap() {
+        const location = { lat: 37.7749, lng: -122.4194 }; // Thay tọa độ bằng địa chỉ của bạn
+        const map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 12,
+            center: location,
+        });
+        const marker = new google.maps.Marker({
+            position: location,
+            map: map,
+        });
+    }
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAkmSNYkac0IPYpY4bNfR-C0rNWTOxRHYw&callback=initMap" async defer></script>
+{% endblock %}

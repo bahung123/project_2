@@ -1,0 +1,36 @@
+.nav-link:hover {
+    color:orange;
+    font: optional;
+}
+/*footer*/
+.room-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.room-item img {
+    object-fit: cover;
+    width: 100%;
+    height: 200px;
+}
+
+.room-item .p-4 {
+    flex-grow: 1; /* Allow the description part to take up the remaining space */
+}
+
+.room-item .p-4 .d-flex {
+    justify-content: space-between; /* Giữ khoảng cách giữa các phần nội dung */
+}
+
+.room-item .p-4 p {
+    margin-top: auto; /* Đẩy phần mô tả xuống dưới */
+}
+
+.room-item .d-flex.justify-content-between {
+    margin-top: 10px;
+}
+.text-white important {
+    color: orange;
+}
