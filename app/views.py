@@ -8,6 +8,7 @@ from datetime import datetime
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
 from django.db import transaction
+from django.views.decorators.csrf import csrf_protect
 
 
 def index(request):
@@ -155,7 +156,7 @@ def service(request):
     
     return render(request, 'service.html', {'services': services})
 
-
+@csrf_protect
 def booking(request):
     if request.method == 'POST':
         try:
@@ -168,61 +169,58 @@ def booking(request):
             guest_phone = request.POST.get('guest_phone')
             guest_id_card = request.POST.get('guest_id_card')
 
-            # Validate dữ liệu
-            if not all([selected_rooms, check_in, check_out, guest_name, guest_email, guest_phone, guest_id_card]):
-                messages.error(request, 'Please fill in all required fields.')
-                return redirect('booking')
+            # Debug information
+            print("DEBUG: Form data received:")
+            print(f"Selected rooms: {selected_rooms}")
+            print(f"Check in: {check_in}")
+            print(f"Check out: {check_out}")
+            print(f"Guest info: {guest_name}, {guest_email}, {guest_phone}, {guest_id_card}")
 
-            # Chuyển đổi ngày
-            try:
-                check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
-                check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
-            except ValueError:
-                messages.error(request, 'Invalid date format.')
-                return redirect('booking')
+            # Validate dates
+            check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
+            check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
 
-            # Validate ngày
-            if check_in_date >= check_out_date:
-                messages.error(request, 'Check-out date must be after check-in date.')
-                return redirect('booking')
-
-            if check_in_date < datetime.now().date():
-                messages.error(request, 'Check-in date cannot be in the past.')
-                return redirect('booking')
-
-            # Kiểm tra xem phòng còn trống không
-            rooms_reserved = ReservationRoom.objects.filter(
-                reservation__check_in_date__lt=check_out_date,
-                reservation__check_out_date__gt=check_in_date,
-                room_id__in=selected_rooms
-            ).exists()
-
-            if rooms_reserved:
-                messages.error(request, 'Some selected rooms are no longer available. Please search again.')
-                return redirect('booking')
-
-            # Tạo reservation
-            reservation = Reservation.objects.create(
-                guest_name=guest_name,
-                guest_email=guest_email,
-                guest_phone=guest_phone,
-                guest_id_card=guest_id_card,
-                check_in_date=check_in_date,
-                check_out_date=check_out_date
+            # Tạo hoặc lấy thông tin Guest
+            guest, created = Guest.objects.get_or_create(
+                email=guest_email,
+                defaults={
+                    'full_name': guest_name,
+                    'phone_number': guest_phone,
+                    'id_card': guest_id_card,
+                    'has_account': 1 if request.user.is_authenticated else 0,
+                    'user_id': request.user.id if request.user.is_authenticated else None
+                }
             )
 
-            # Tạo reservation rooms
-            for room_id in selected_rooms:
-                ReservationRoom.objects.create(
-                    reservation=reservation,
-                    room_id=room_id
+            # Lấy branch từ room đầu tiên được chọn
+            first_room = Room.objects.get(id=selected_rooms[0])
+            branch = first_room.branch
+
+            # Tạo reservation
+            with transaction.atomic():
+                reservation = Reservation.objects.create(
+                    branch=branch,
+                    guest=guest,
+                    check_in_date=check_in_date,
+                    check_out_date=check_out_date,
+                    status='pending'  # hoặc trạng thái phù hợp
                 )
+
+                # Tạo reservation rooms
+                for room_id in selected_rooms:
+                    ReservationRoom.objects.create(
+                        reservation=reservation,
+                        room_id=room_id
+                    )
 
             messages.success(request, 'Booking successful! Thank you for choosing our service.')
             return redirect('booking')
 
         except Exception as e:
-            messages.error(request, f'An error occurred during booking. Please try again.')
+            import traceback
+            print("ERROR in booking:")
+            print(traceback.format_exc())
+            messages.error(request, f'Booking error: {str(e)}')
             return redirect('booking')
 
     # GET request
