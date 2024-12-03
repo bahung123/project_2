@@ -17,5 +17,6 @@ urlpatterns = [
     path('account_info/', views.account_info, name='account_info'),
     path('update_account_info/', views.update_account_info, name='update_account_info'),
     path('change_password/', views.change_password, name='change_password'),
+    path('search-rooms/', views.search_rooms, name='search_rooms'),
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

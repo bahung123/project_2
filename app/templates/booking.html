@@ -5,103 +5,259 @@
 <div class="container mt-5">
     <h1 class="text-center mb-4">Booking</h1>
 
-    <!-- Hiển thị thông báo -->
     {% if messages %}
-        <div class="alert alert-info">
-            {% for message in messages %}
-                <p>{{ message }}</p>
-            {% endfor %}
-        </div>
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
     {% endif %}
 
-    <form method="GET" action="{% url 'booking' %}">
+    <form id="searchForm" method="GET" action="{% url 'booking' %}" onsubmit="searchRooms(event)">
         {% csrf_token %}
         
-        <!-- Thông tin khách hàng -->
+        <!-- Customer Information -->
         <h3 class="mb-3">Customer Information</h3>
         <div class="form-group mb-3">
-            <label for="guest_name" class="form-label">Guest Name</label>
-            <input type="text" class="form-control" id="guest_name" name="guest_name" value="{{ guest_name }}" {% if guest_name %} readonly {% endif %} placeholder="Enter guest name">
-        </div>
-        <div class="form-group mb-3">
-            <label for="guest_email" class="form-label">Email</label>
-            <input type="email" class="form-control" id="guest_email" name="guest_email" value="{{ guest_email }}" {% if guest_email %} readonly {% endif %} placeholder="Enter email">
-        </div>
-        <div class="form-group mb-3">
-            <label for="guest_phone" class="form-label">Phone Number</label>
-            <input type="text" class="form-control" id="guest_phone" name="guest_phone" value="{{ guest_phone }}" {% if guest_phone %} readonly {% endif %} placeholder="Enter phone number">
-        </div>
-        <div class="form-group mb-3">
-            <label for="guest_id_card" class="form-label">ID Card Number</label>
-            <input type="text" class="form-control" id="guest_id_card" name="guest_id_card" value="{{ guest_id_card }}" placeholder="Enter ID card number">
+            <label for="guest_name" class="form-label">Guest Name *</label>
+            <input type="text" class="form-control" id="guest_name" name="guest_name" 
+                   value="{{ request.GET.guest_name|default:guest_name }}" 
+                   {% if guest_name %} readonly {% endif %} 
+                   required
+                   placeholder="Enter guest name">
         </div>
 
-        <!-- Chọn loại phòng -->
+        <div class="form-group mb-3">
+            <label for="guest_email" class="form-label">Email *</label>
+            <input type="email" class="form-control" id="guest_email" name="guest_email" 
+                   value="{{ request.GET.guest_email|default:guest_email }}"
+                   {% if guest_email %} readonly {% endif %}
+                   required
+                   placeholder="Enter email">
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="guest_phone" class="form-label">Phone Number *</label>
+            <input type="tel" class="form-control" id="guest_phone" name="guest_phone" 
+                   value="{{ request.GET.guest_phone|default:guest_phone }}"
+                   {% if guest_phone %} readonly {% endif %}
+                   required
+                   pattern="[0-9]{10,11}"
+                   title="Phone number should be 10-11 digits"
+                   placeholder="Enter phone number">
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="guest_id_card" class="form-label">ID Card *</label>
+            <input type="text" class="form-control" id="guest_id_card" name="guest_id_card" 
+                   value="{{ request.GET.guest_id_card|default:guest_id_card }}"
+                   {% if guest_id_card %} readonly {% endif %}
+                   required
+                   pattern="[0-9]{9,12}"
+                   title="ID card should be 9-12 digits"
+                   placeholder="Enter ID card number">
+        </div>
+
+        <!-- Booking Information -->
         <h3 class="mb-3">Choose Room Type</h3>
         <div class="form-group mb-3">
-            <label for="room_type" class="form-label">Room Type</label>
+            <label for="room_type" class="form-label">Room Type *</label>
             <select class="form-control" id="room_type" name="room_type" required>
                 <option value="">Select Room Type</option>
-                {% for room_type in room_types %}
-                    <option value="{{ room_type.id }}" {% if room_type.id == room_type_id %} selected {% endif %}>
-                        {{ room_type.name }} - ${{ room_type.base_price }} / night
+                {% for rt in room_types %}
+                    <option value="{{ rt.id }}" 
+                            {% if rt.id|stringformat:"s" == room_type_id %}selected{% endif %}>
+                        {{ rt.name }} - ${{ rt.base_price }} / night
                     </option>
                 {% endfor %}
             </select>
         </div>
 
-        <!-- Thông tin ngày -->
-        <h3 class="mb-3">Booking Information</h3>
         <div class="form-group mb-3">
-            <label for="check_in" class="form-label">Check-In Date</label>
-            <input type="date" class="form-control" id="check_in" name="check_in" value="{{ check_in }}" required>
-        </div>
-        <div class="form-group mb-3">
-            <label for="check_out" class="form-label">Check-Out Date</label>
-            <input type="date" class="form-control" id="check_out" name="check_out" value="{{ check_out }}" required>
+            <label for="check_in" class="form-label">Check-in Date *</label>
+            <input type="date" class="form-control" id="check_in" name="check_in" 
+                   value="{{ check_in }}" 
+                   min="{{ today|date:'Y-m-d' }}"
+                   required>
         </div>
 
-        <!-- Nút tìm phòng -->
+        <div class="form-group mb-3">
+            <label for="check_out" class="form-label">Check-out Date *</label>
+            <input type="date" class="form-control" id="check_out" name="check_out" 
+                   value="{{ check_out }}" 
+                   min="{{ today|date:'Y-m-d' }}"
+                   required>
+        </div>
+
         <div class="d-flex justify-content-center">
             <button type="submit" class="btn btn-primary">Search Available Rooms</button>
         </div>
     </form>
 
-    <!-- Danh sách phòng trống -->
-    <h3 class="mt-4 mb-3">Available Rooms</h3>
-    {% if rooms %}
-        <ul class="list-group mb-3">
-            {% for room in rooms %}
-                <li class="list-group-item">
-                    Room {{ room.room_number }} - {{ room.room_type.name }} - ${{ room.room_type.base_price }} / night
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p class="text-danger">No available rooms for the selected type.</p>
-    {% endif %}
-
-    <!-- Tổng tiền -->
-    <h3 class="mb-3">Total Amount</h3>
-    <p class="text-primary">Total Amount: ${{ total_amount }}</p>
-
-    <!-- Nút xác nhận -->
-    {% if rooms %}
-        <form method="POST" action="{% url 'booking' %}">
-            {% csrf_token %}
-            <!-- Ẩn các thông tin đã chọn -->
-            <input type="hidden" name="guest_name" value="{{ guest_name }}">
-            <input type="hidden" name="guest_email" value="{{ guest_email }}">
-            <input type="hidden" name="guest_phone" value="{{ guest_phone }}">
-            <input type="hidden" name="guest_id_card" value="{{ guest_id_card }}">
-            <input type="hidden" name="room_type" value="{{ room_type_id }}">
-            <input type="hidden" name="check_in" value="{{ check_in }}">
-            <input type="hidden" name="check_out" value="{{ check_out }}">
-
-            <div class="d-flex justify-content-center">
-                <button type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
-            </div>
-        </form>
-    {% endif %}
+    <div id="searchResults" class="mt-4">
+        <!-- Search results will be loaded here -->
+    </div>
 </div>
+
+<script>
+function searchRooms(event) {
+    event.preventDefault();
+    
+    // Validate dates
+    const checkIn = new Date(document.getElementById('check_in').value);
+    const checkOut = new Date(document.getElementById('check_out').value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (checkIn < today) {
+        alert('Check-in date cannot be in the past');
+        return;
+    }
+
+    if (checkOut <= checkIn) {
+        alert('Check-out date must be after check-in date');
+        return;
+    }
+
+    document.getElementById('searchResults').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+
+    const formData = new FormData(document.getElementById('searchForm'));
+    const searchParams = new URLSearchParams(formData);
+
+    fetch(`{% url 'search_rooms' %}?${searchParams.toString()}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        credentials: 'same-origin'
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('searchResults').innerHTML = `
+                    <div class="alert alert-danger">
+                        ${data.error}
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            if (data.rooms && data.rooms.length > 0) {
+                html += `
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" id="selectAll" class="form-check-input">
+                            <label class="form-check-label" for="selectAll">Select All</label>
+                        </div>
+                    </div>
+                    <form id="bookingForm" method="POST" action="{% url 'booking' %}">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+                        <input type="hidden" name="check_in" value="${document.getElementById('check_in').value}">
+                        <input type="hidden" name="check_out" value="${document.getElementById('check_out').value}">
+                        <input type="hidden" name="guest_name" value="${document.getElementById('guest_name').value}">
+                        <input type="hidden" name="guest_email" value="${document.getElementById('guest_email').value}">
+                        <input type="hidden" name="guest_phone" value="${document.getElementById('guest_phone').value}">
+                        <input type="hidden" name="guest_id_card" value="${document.getElementById('guest_id_card').value}">
+                        <ul class="list-group mb-3">
+                `;
+
+                data.rooms.forEach(room => {
+                    html += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input room-checkbox" 
+                                       name="selected_rooms" 
+                                       value="${room.id}" 
+                                       id="room_${room.id}">
+                                <label class="form-check-label" for="room_${room.id}">
+                                    Room ${room.room_number} - ${room.room_type_name}
+                                </label>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">$${room.price}/night</span>
+                        </li>
+                    `;
+                });
+
+                html += `
+                        </ul>
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Booking Summary</h5>
+                                <p class="card-text">Number of Nights: ${data.numberOfNights}</p>
+                                <p class="card-text">Selected Rooms: <span id="selectedRoomCount">0</span></p>
+                                <p class="card-text">Total Amount: $<span id="totalAmount">0</span></p>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-center">
+                            <button type="submit" class="btn btn-success btn-lg" id="confirmButton" disabled>
+                                Confirm Booking
+                            </button>
+                        </div>
+                    </form>
+                `;
+            } else {
+                html = '<div class="alert alert-warning">No available rooms for your selected dates.</div>';
+            }
+
+            document.getElementById('searchResults').innerHTML = html;
+            
+            initializeEventListeners(data.pricePerNight, data.numberOfNights);
+        })
+        .catch(error => {
+            document.getElementById('searchResults').innerHTML = `
+                <div class="alert alert-danger">
+                    An error occurred while searching for rooms. Please try again.
+                </div>
+            `;
+            console.error('Error:', error);
+        });
+}
+
+function initializeEventListeners(pricePerNight, numberOfNights) {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const roomCheckboxes = document.querySelectorAll('.room-checkbox');
+    const confirmButton = document.getElementById('confirmButton');
+    const selectedRoomCount = document.getElementById('selectedRoomCount');
+    const totalAmountSpan = document.getElementById('totalAmount');
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            roomCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateTotals();
+        });
+    }
+
+    roomCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allChecked = Array.from(roomCheckboxes).every(cb => cb.checked);
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = allChecked;
+            }
+            updateTotals();
+        });
+    });
+
+    function updateTotals() {
+        const selectedRooms = document.querySelectorAll('.room-checkbox:checked');
+        const count = selectedRooms.length;
+        const total = (count * parseFloat(pricePerNight) * parseInt(numberOfNights)).toFixed(2);
+
+        selectedRoomCount.textContent = count;
+        totalAmountSpan.textContent = total;
+        if (confirmButton) {
+            confirmButton.disabled = count === 0;
+        }
+    }
+}
+</script>
 {% endblock %}
