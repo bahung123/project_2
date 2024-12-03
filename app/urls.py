@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from django.conf.urls.static import static
 from django.conf import settings
+from . import view_admin
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -18,5 +19,7 @@ urlpatterns = [
     path('update_account_info/', views.update_account_info, name='update_account_info'),
     path('change_password/', views.change_password, name='change_password'),
     path('search-rooms/', views.search_rooms, name='search_rooms'),
+    path('base_admin/', view_admin.base_admin, name='base_admin'),
+
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
