@@ -47,6 +47,15 @@
                    title="Phone number should be 10-11 digits"
                    placeholder="Enter phone number">
         </div>
+        
+        <div class="form-group mb-3">
+            <label for="guest_address" class="form-label">Address *</label>
+            <input type="text" class="form-control" id="guest_address" name="guest_address" 
+                   value="{{ request.GET.guest_address|default:guest_address }}"
+                   {% if guest_address %} readonly {% endif %}
+                   required
+                   placeholder="Enter address">
+        </div>
 
         <div class="form-group mb-3">
             <label for="guest_id_card" class="form-label">ID Card *</label>
@@ -166,6 +175,7 @@ function searchRooms(event) {
                         <input type="hidden" name="guest_email" value="${document.getElementById('guest_email').value}">
                         <input type="hidden" name="guest_phone" value="${document.getElementById('guest_phone').value}">
                         <input type="hidden" name="guest_id_card" value="${document.getElementById('guest_id_card').value}">
+                        <input type="hidden" name="guest_address" value="${document.getElementById('guest_address').value}"> <!-- Added to save address -->
                         <ul class="list-group mb-3">
                 `;
 

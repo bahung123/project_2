@@ -168,13 +168,13 @@ def booking(request):
             guest_email = request.POST.get('guest_email')
             guest_phone = request.POST.get('guest_phone')
             guest_id_card = request.POST.get('guest_id_card')
-
+            guest_address = request.POST.get('guest_address', '')  # Ensure address is captured even if empty
             # Debug information
             print("DEBUG: Form data received:")
             print(f"Selected rooms: {selected_rooms}")
             print(f"Check in: {check_in}")
             print(f"Check out: {check_out}")
-            print(f"Guest info: {guest_name}, {guest_email}, {guest_phone}, {guest_id_card}")
+            print(f"Guest info: {guest_name}, {guest_email}, {guest_phone}, {guest_address}, {guest_id_card}")
 
             # Validate dates
             check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
@@ -186,6 +186,7 @@ def booking(request):
                 defaults={
                     'full_name': guest_name,
                     'phone_number': guest_phone,
+                    'address': guest_address or '',  # Ensure address is saved even if empty
                     'id_card': guest_id_card,
                     'has_account': 1 if request.user.is_authenticated else 0,
                     'user_id': request.user.id if request.user.is_authenticated else None
@@ -240,7 +241,9 @@ def booking(request):
                 'guest_name': guest.full_name,
                 'guest_email': guest.email,
                 'guest_phone': guest.phone_number,
+                'guest_address': guest.address,
                 'guest_id_card': guest.id_card,
+                
             })
         except Guest.DoesNotExist:
             # Nếu không tìm thấy Guest, sử dụng thông tin cơ bản từ User
@@ -248,6 +251,7 @@ def booking(request):
                 'guest_name': request.user.get_full_name() or request.user.username,
                 'guest_email': request.user.email,
                 'guest_phone': '',
+                'guest_address': '',
                 'guest_id_card': '',
             })
     else:
@@ -256,6 +260,7 @@ def booking(request):
             'guest_name': request.GET.get('guest_name', ''),
             'guest_email': request.GET.get('guest_email', ''),
             'guest_phone': request.GET.get('guest_phone', ''),
+            'guest_address': request.GET.get('guest_address', ''),
             'guest_id_card': request.GET.get('guest_id_card', ''),
         })
 
