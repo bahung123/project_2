@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.hashers import make_password
 from .models import (
     AuthGroup, AuthGroupPermissions, AuthPermission, AuthUser, 
     AuthUserGroups, AuthUserUserPermissions, Bill, Branch, 
@@ -20,6 +21,10 @@ class AuthPermissionAdmin(admin.ModelAdmin):
 
 class AuthUserAdmin(admin.ModelAdmin):
     list_display = ('username', 'first_name', 'last_name', 'email', 'is_staff', 'is_active', 'date_joined')
+    def save_model(self, request, obj, form, change):
+        if form.cleaned_data.get('password') and not obj.password.startswith('pbkdf2_'):
+            obj.password = make_password(form.cleaned_data['password'])
+        super().save_model(request, obj, form, change)
 
 class AuthUserGroupsAdmin(admin.ModelAdmin):
     list_display = ('user', 'group')
