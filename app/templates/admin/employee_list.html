@@ -1,0 +1,209 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    {% if action == 'view' %}
+    <!-- Chi tiết nhân viên -->
+    <h1>Employee Details: {{ employee.full_name }}</h1>
+    <table class="table mt-3">
+        <tr>
+            <th>Full Name</th>
+            <td>{{ employee.full_name }}</td>
+        </tr>
+        <tr>
+            <th>Phone Number</th>
+            <td>{{ employee.phone_number }}</td>
+        </tr>
+        <tr>
+            <th>Email</th>
+            <td>{{ employee.email }}</td>
+        </tr>
+        <tr>
+            <th>Position</th>
+            <td>{{ employee.position }}</td>
+        </tr>
+        <tr>
+            <th>Department</th>
+            <td>{{ employee.department }}</td>
+        </tr>
+        <tr>
+            <th>Salary</th>
+            <td>{{ employee.salary }}</td>
+        </tr>
+        <tr>
+            <th>Status</th>
+            <td>{{ employee.status }}</td>
+        </tr>
+    </table>
+    <a href="{% url 'employee_detail' employee.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
+    <a href="{% url 'employee_detail' employee.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
+
+    {% elif action == 'edit' %}
+    <!-- Chỉnh sửa nhân viên -->
+    {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+    {% endif %}
+    <h1>Edit Employee: {{ employee.full_name }}</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="full_name" class="form-label">Full Name</label>
+            <input type="text" id="full_name" name="full_name" class="form-control" value="{{ employee.full_name }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="phone_number" class="form-label">Phone Number</label>
+            <input type="text" id="phone_number" name="phone_number" class="form-control" value="{{ employee.phone_number }}">
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" name="email" class="form-control" value="{{ employee.email }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="position" class="form-label">Position</label>
+            <input type="text" id="position" name="position" class="form-control" value="{{ employee.position }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="department" class="form-label">Department</label>
+            <input type="text" id="department" name="department" class="form-control" value="{{ employee.department }}">
+        </div>
+        <div class="mb-3">
+            <label for="salary" class="form-label">Salary</label>
+            <input type="number" id="salary" name="salary" class="form-control" value="{{ employee.salary }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <input type="text" id="status" name="status" class="form-control" value="{{ employee.status }}" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+
+    {% elif action == 'delete' %}
+    <!-- Xóa nhân viên -->
+    <h1>Are you sure you want to delete employee: {{ employee.full_name }}?</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a href="{% url 'employee_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+    {% elif action == 'add' %}
+    <!-- Thêm nhân viên -->
+    <h1>Add Employee</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="branch" class="form-label">Branch</label>
+            <select class="form-control" id="branch" name="branch" required>
+                <option value="">Select a Branch</option>
+                {% for branch in branches %}
+                <option value="{{ branch.id }}" {% if branch.id == selected_branch_id %}selected{% endif %}>{{ branch.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" id="username" name="username" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="confirm_password" class="form-label">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="full_name" class="form-label">Full Name</label>
+            <input type="text" id="full_name" name="full_name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="phone_number" class="form-label">Phone Number</label>
+            <input type="text" id="phone_number" name="phone_number" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="position" class="form-label">Position</label>
+            <input type="text" id="position" name="position" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="department" class="form-label">Department</label>
+            <input type="text" id="department" name="department" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="salary" class="form-label">Salary</label>
+            <input type="number" id="salary" name="salary" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <input type="text" id="status" name="status" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="hire_date" class="form-label">Hire Date</label>
+            <input type="date" id="hire_date" name="hire_date" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Employee</button>
+    </form>
+    
+    
+
+
+    {% else %}
+
+
+    <h1>Employee List</h1>
+    {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Thanh tìm kiếm -->
+    <form method="GET" action="{% url 'employee_list' %}" class="mb-3">
+    <div class="input-group">
+        <input type="text" class="form-control" placeholder="Search by Full Name or Email" name="search" value="{{ search_query }}">
+        <button class="btn btn-outline-secondary" type="submit">Search</button>
+    </div>
+    </form>
+    <!-- thêm nhân viên -->
+        <a href="{% url 'employee_detail' 0 %}?action=add" class="btn btn-primary">Add Employee</a>
+
+    <!-- Bảng danh sách nhân viên -->
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Full Name</th>
+                <th>Position</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ employee.full_name }}</td>
+                <td>{{ employee.position }}</td>
+                <td>{{ employee.email }}</td>
+                <td>
+                    <a href="{% url 'employee_detail' employee.id %}?action=view" class="btn btn-primary btn-sm">View</a>
+                    <a href="{% url 'employee_detail' employee.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'employee_detail' employee.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

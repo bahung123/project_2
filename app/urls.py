@@ -5,6 +5,7 @@ from django.conf import settings
 from . import view_admin
 
 urlpatterns = [
+    # Các URL cho người dùng
     path('', views.index, name='index'),
     path('login/', views.login, name='login'),
     path('register/', views.register, name='register'),
@@ -19,7 +20,13 @@ urlpatterns = [
     path('update_account_info/', views.update_account_info, name='update_account_info'),
     path('change_password/', views.change_password, name='change_password'),
     path('search-rooms/', views.search_rooms, name='search_rooms'),
+
+    
     path('base_admin/', view_admin.base_admin, name='base_admin'),
-
-
+    path('base_admin/dashboard/', view_admin.dashboard, name='dashboard'),
+    path('base_admin/employee/', view_admin.employee_list, name='employee_list'),
+    path('base_admin/employee/<int:pk>/', view_admin.employee_list, name='employee_detail'),
+    
+    path('base_admin/guest/', view_admin.guest_list, name='guest_list'),
+    path('base_admin/guest/<int:pk>/', view_admin.guest_list, name='guest_detail'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

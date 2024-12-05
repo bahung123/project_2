@@ -122,3 +122,5 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'  # URL để truy cập file media
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Thư mục lưu file media
+# settings.py
+LOGIN_URL = 'login'  # Tên URL của trang đăng nhập

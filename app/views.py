@@ -15,7 +15,7 @@ def index(request):
     room_types = RoomType.objects.all()
     for room_type in room_types:
         room_type.image = Image.objects.filter(room_type_id=room_type.id).first()
-    return render(request, 'index.html', {'room_types': room_types})
+    return render(request, 'user/index.html', {'room_types': room_types})
 
 def login(request):
     if request.method == 'POST':
@@ -56,7 +56,7 @@ def login(request):
             print(f"DEBUG: User {username} authentication failed.")
             messages.error(request, 'Invalid username or password')
 
-    return render(request, 'login.html')
+    return render(request, 'user/login.html')
 
 
 
@@ -80,15 +80,15 @@ def register(request):
 
         # Kiểm tra mật khẩu
         if password != confirm_password:
-            return render(request, 'register.html', {'error': 'Passwords do not match'})
+            return render(request, 'user/register.html', {'error': 'Passwords do not match'})
 
         # Kiểm tra xem username đã tồn tại chưa
         if User.objects.filter(username=username).exists():
-            return render(request, 'register.html', {'error': 'Username already exists'})
+            return render(request, 'user/register.html', {'error': 'Username already exists'})
 
         # Kiểm tra xem email đã tồn tại chưa
         if User.objects.filter(email=email).exists():
-            return render(request, 'register.html', {'error': 'Email already exists'})
+            return render(request, 'user/register.html', {'error': 'Email already exists'})
 
         # Lưu người dùng mới vào bảng auth_user
         user = User.objects.create_user(username=username, email=email, password=password)
@@ -102,7 +102,7 @@ def register(request):
         messages.success(request, 'Account created successfully. Please login!')
         return redirect('login')
 
-    return render(request, 'register.html')
+    return render(request, 'user/register.html')
 
 
 
@@ -167,17 +167,18 @@ def room(request):
     room_types = RoomType.objects.all()
     for room_type in room_types:
         room_type.image = Image.objects.filter(room_type_id=room_type.id).first()
-    return render(request, 'room.html', {'room_types': room_types})
+    return render(request, 'user/room.html', {'room_types': room_types})
 
 
 def room_detail(request):
-    return render(request, 'room_detail.html')
+    return render(request, 'user/room_detail.html')
+
 def about(request):
-    return render(request, 'about.html')
+    return render(request, 'user/about.html')
 
 
 def contact(request):
-    return render(request, 'contact.html')
+    return render(request, 'user/contact.html')
 
 def service(request):
     services = Service.objects.all()
@@ -186,7 +187,7 @@ def service(request):
     for service in services:
         service.image = Image.objects.filter(service_id=service.id).first()  # service_id tương ứng với id của Service
     
-    return render(request, 'service.html', {'services': services})
+    return render(request, 'user/service.html', {'services': services})
 
 @csrf_protect
 def booking(request):
@@ -303,7 +304,7 @@ def booking(request):
         'check_out': request.GET.get('check_out', ''),
     })
 
-    return render(request, 'booking.html', context)
+    return render(request, 'user/booking.html', context)
 
 def search_rooms(request):
     try:
