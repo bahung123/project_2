@@ -56,6 +56,7 @@ def employee_list(request, pk=None):
     elif action == 'edit' and pk:
         # Hiển thị form chỉnh sửa
         employee = get_object_or_404(Employee, pk=pk)
+        user = AuthUser.objects.get(pk=employee.user_id)
         if request.method == 'POST':
             full_name = request.POST.get('full_name')
             phone_number = request.POST.get('phone_number')
@@ -79,6 +80,9 @@ def employee_list(request, pk=None):
                 messages.error(request, 'Email already exists')
                 return render(request, 'admin/employee_list.html', context)
             
+            #cập nhật authuser
+            user.email = email
+            user.save()
             # cập nhật thông tin nhân viên
             employee.full_name = full_name
             employee.phone_number = phone_number
@@ -87,8 +91,6 @@ def employee_list(request, pk=None):
             employee.department = department
             employee.salary = salary
             employee.status = status
-
-            
             employee.save()
             messages.success(request, 'Employee updated successfully')
             return redirect('employee_list')
@@ -96,15 +98,24 @@ def employee_list(request, pk=None):
         return render(request, 'admin/employee_list.html', context)
 
     elif action == 'delete' and pk:
-        # Xóa nhân viên
-        employee = get_object_or_404(Employee, pk=pk)
+        employee= get_object_or_404(Employee, pk=pk)
         if request.method == 'POST':
-            employee.delete()
+            try:
+                with transaction.atomic():
+                    #kiểm tra nhân viên nếu có user_id hợp lệ
+                    if employee.user_id:
+                        user = AuthUser.objects.get(pk=employee.user_id)
+                        user.delete()
+                    #xóa nhân viên 
+                    employee.delete()
+                    messages.success(request, 'Employee deleted successfully')
+            except Exception as e:
+                messages.error(request, f"Error while deleting employee or account: {e}")
+
             return redirect('employee_list')
         context['employee'] = employee
-        messages.success(request, 'Employee deleted successfully')
         return render(request, 'admin/employee_list.html', context)
-
+    
     if action == 'add':
         branches = Branch.objects.all()  # Lấy tất cả các chi nhánh
         context['branches'] = branches
@@ -207,6 +218,7 @@ def guest_list(request , pk=None):
     elif action == 'edit' and pk:
         # Hiển thị form chỉnh sửa
         guest = get_object_or_404(Guest, pk=pk)
+        user = AuthUser.objects.get(pk=guest.user_id)
         if request.method == 'POST':
             full_name = request.POST.get('full_name')
             phone_number = request.POST.get('phone_number')
@@ -234,6 +246,9 @@ def guest_list(request , pk=None):
                 messages.error(request, 'Id card already exists')
                 return render(request, 'admin/guest_list.html', context)
             
+            #cập nhật authuser
+            user.email = email
+            user.save()
             # cập nhật thông tin khách hàng
             guest.full_name = full_name
             guest.phone_number = phone_number

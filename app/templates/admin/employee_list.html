@@ -2,8 +2,8 @@
 
 {% block content %}
 <div class="container mt-4">
-    {% if action == 'view' %}
     <!-- Chi tiết nhân viên -->
+    {% if action == 'view' %}
     <h1>Employee Details: {{ employee.full_name }}</h1>
     <table class="table mt-3">
         <tr>
@@ -38,8 +38,8 @@
     <a href="{% url 'employee_detail' employee.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
     <a href="{% url 'employee_detail' employee.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
 
-    {% elif action == 'edit' %}
     <!-- Chỉnh sửa nhân viên -->
+    {% elif action == 'edit' %}
     {% if messages %}
     {% for message in messages %}
         <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
@@ -82,16 +82,17 @@
         <button type="submit" class="btn btn-primary">Save Changes</button>
     </form>
 
-    {% elif action == 'delete' %}
     <!-- Xóa nhân viên -->
+    {% elif action == 'delete' %}
     <h1>Are you sure you want to delete employee: {{ employee.full_name }}?</h1>
     <form method="POST">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger">Delete</button>
         <a href="{% url 'employee_list' %}" class="btn btn-secondary">Cancel</a>
     </form>
-    {% elif action == 'add' %}
+
     <!-- Thêm nhân viên -->
+    {% elif action == 'add' %}
     <h1>Add Employee</h1>
     <form method="POST">
         {% csrf_token %}
@@ -150,10 +151,6 @@
         </div>
         <button type="submit" class="btn btn-primary">Add Employee</button>
     </form>
-    
-    
-
-
     {% else %}
 
 
