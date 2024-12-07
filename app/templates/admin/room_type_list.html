@@ -1,0 +1,250 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-xxl py-5">
+    <div class="container">
+        {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+        {% endif %}
+        <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+            <h1 class="section-title text-center text-primary text-uppercase">Room Type</h1>
+        </div>
+
+        <!-- Thanh tìm kiếm và nút Add Room -->
+        {% if action == 'list' %}
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <form method="GET" action="{% url 'room_type_list' %}" class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search room types..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="{% url 'room_type_list' %}?action=add" class="btn btn-success">Add Room Type</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row g-4">
+            {% if action == 'view' %}
+                <!-- Hiển thị chi tiết loại phòng -->
+                <div class="col-12">
+                    <h1>Room Type Details: {{ room_type.name }}</h1>
+                    <table class="table mt-3">
+                        <tr>
+                            <th>Name</th>
+                            <td>{{ room_type.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description</th>
+                            <td>{{ room_type.description|default:"No description available." }}</td>
+                        </tr>
+                        <tr>
+                            <th>Base Price</th>
+                            <td>${{ room_type.base_price }}</td>
+                        </tr>
+                        <tr>
+                            <th>Min Area</th>
+                            <td>{{ room_type.min_area|default:"Not specified" }} m²</td>
+                        </tr>
+                        <tr>
+                            <th>Max Area</th>
+                            <td>{{ room_type.max_area|default:"Not specified" }} m²</td>
+                        </tr>
+                        <tr>
+                            <th>Number of Beds</th>
+                            <td>{{ room_type.num_beds }}</td>
+                        </tr>
+                        <tr>
+                            <th>Image</th>
+                            <td>
+                                {% for image in room_type.images %}
+                                    <img src="{{ image.image_file.url }}" alt="Room Image" class="img-fluid" style="max-width: 200px;">
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    </table>
+                    <a href="{% url 'room_type_detail' room_type.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'room_type_detail' room_type.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
+                </div>
+
+                {% elif action == 'edit' %}
+                <!-- Form chỉnh sửa -->
+                <div class="col-12">
+                    <h1>Edit Room Type: {{ room_type.name }}</h1>
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Tên loại phòng -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" id="name" name="name" class="form-control" value="{{ room_type.name }}" required>
+                        </div>
+            
+                        <!-- Giá cơ bản -->
+                        <div class="mb-3">
+                            <label for="base_price" class="form-label">Base Price</label>
+                            <input type="number" step="0.01" id="base_price" name="base_price" class="form-control" value="{{ room_type.base_price }}" required>
+                        </div>
+            
+                        <!-- Mô tả -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea id="description" name="description" class="form-control">{{ room_type.description }}</textarea>
+                        </div>
+            
+                        <!-- Diện tích tối thiểu -->
+                        <div class="mb-3">
+                            <label for="min_area" class="form-label">Min Area (m²)</label>
+                            <input type="number" step="0.01" id="min_area" name="min_area" class="form-control" value="{{ room_type.min_area }}">
+                        </div>
+            
+                        <!-- Diện tích tối đa -->
+                        <div class="mb-3">
+                            <label for="max_area" class="form-label">Max Area (m²)</label>
+                            <input type="number" step="0.01" id="max_area" name="max_area" class="form-control" value="{{ room_type.max_area }}">
+                        </div>
+            
+                        <!-- Số giường -->
+                        <div class="mb-3">
+                            <label for="num_beds" class="form-label">Number of Beds</label>
+                            <input type="number" id="num_beds" name="num_beds" class="form-control" value="{{ room_type.num_beds }}" required>
+                        </div>
+            
+                        <!-- Hình ảnh -->
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Images</label>
+                            <input type="file" id="images" name="images" class="form-control" multiple>
+                            <div class="mt-2">
+                                <p>Current Images:</p>
+                                <div class="d-flex flex-wrap">
+                                    {% for image in room_type.images %}
+                                        <div class="me-2 mb-2">
+                                            <img src="{{ image.image_file.url }}" alt="Room Image" class="img-fluid rounded" style="max-width: 100px;">
+                                            <!-- Button xóa ảnh -->
+                                            <button type="submit" class="btn btn-danger btn-sm" name="delete_image_id" value="{{ image.id }}">Delete</button>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+            
+                        <!-- Nút lưu thay đổi -->
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            
+
+
+            {% elif action == 'add' %}
+                <!-- Form thêm loại phòng mới -->
+                <div class="col-12">
+                    <h1>Add Room Type</h1>
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" id="name" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="base_price" class="form-label">Base Price</label>
+                            <input type="number" step="0.01" id="base_price" name="base_price" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea id="description" name="description" class="form-control"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="min_area" class="form-label">Min Area</label>
+                            <input type="number" step="0.01" id="min_area" name="min_area" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="max_area" class="form-label">Max Area</label>
+                            <input type="number" step="0.01" id="max_area" name="max_area" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="num_beds" class="form-label">Number of Beds</label>
+                            <input type="number" id="num_beds" name="num_beds" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Upload Images</label>
+                            <input type="file" id="images" name="images" class="form-control" multiple>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Room Type</button>
+                    </form>
+                </div>
+
+            {% elif action == 'delete' %}
+                <!-- Xác nhận xóa loại phòng -->
+                <div class="col-12">
+                    <h1>Delete Room Type: {{ room_type.name }}</h1>
+                    <p>Are you sure you want to delete this room type?</p>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+
+            {% else %}
+                <!-- Danh sách phòng -->
+                {% for room_type in room_types %}
+                    <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+                        <div class="room-item shadow rounded overflow-hidden">
+                            <div class="position-relative">
+                                {% if room_type.images %}
+                                    <img class="img-fluid" src="{{ room_type.images.0.image_file.url }}" alt="Room Image">
+                                {% else %}
+                                    <img class="img-fluid" src="{% static 'images/default-room.jpg' %}" alt="Default Image">
+                                {% endif %}
+                                <small class="position-absolute start-0 top-100 translate-middle-y bg-primary text-white rounded py-1 px-3 ms-4">
+                                    ${{ room_type.base_price|default:"0" }}/Night
+                                </small>
+                            </div>
+                            <div class="p-4 mt-2">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <h5 class="mb-0">{{ room_type.name|default:"Unknown Room Type" }}</h5>
+                                </div>
+                                <p class="text-body mb-3">{{ room_type.description|default:"No description available." }}</p>
+
+                                <!-- Hiển thị đánh giá sao -->
+                                <div class="mb-3">
+                                    {% for i in 1..5 %}
+                                        <small class="fa fa-star {% if i <= room_type.rating|default:0 %}text-primary{% else %}text-muted{% endif %}"></small>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Hiển thị số giường, wifi và diện tích -->
+                                <div class="d-flex mb-3">
+                                    <small class="border-end me-3 pe-3">
+                                        <i class="fa fa-bed text-primary me-2"></i>{{ room_type.num_beds|default:"?" }} Bed
+                                    </small>
+                                    <!-- Bỏ phần phòng tắm nếu không cần thiết -->
+                                    <small class="border-end me-3 pe-3">
+                                        <i class="fa fa-wifi text-primary me-2"></i>{{ room_type.wifi|default:"WiFi" }}
+                                    </small>
+                                    <small class="ms-3">
+                                        <i class="fa fa-ruler-combined text-primary me-2"></i>{{ room_type.min_area|default:"?" }} - {{ room_type.max_area|default:"?" }} m²
+                                    </small>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'room_type_detail' room_type.id %}?action=view" class="btn btn-primary btn-sm">View</a>
+                                    <a href="{% url 'room_type_detail' room_type.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
+                                    <a href="{% url 'room_type_detail' room_type.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

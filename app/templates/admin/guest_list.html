@@ -120,7 +120,9 @@
     {% else %}
 
 
-    <h1>Guest List</h1>
+    <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+        <h1 class="section-title text-center text-primary text-uppercase">Guest</h1>
+    </div>
     {% if messages %}
     {% for message in messages %}
         <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">

@@ -1,14 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Admin Dashboard{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Hotel Admin</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'javascripts/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'javascripts/main.js' %}"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet"> 
+    <!-- Thêm Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
     <style>
         body {
             background-color: #f8f9fa;
             min-height: 100vh;
+            padding-top: 70px;
         }
         .sidebar {
             background-color: #343a40;
@@ -23,6 +34,10 @@
         }
         .navbar {
             background-color: #6c757d;
+            z-index: 1030;
+        }
+        .navbar .navbar-brand {
+            color: #fff;
         }
         .card {
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -30,13 +45,39 @@
         .card-header {
             font-weight: bold;
         }
+        .main-content {
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .card-body p {
+            font-size: 1.1rem;
+        }
+        .alert {
+            border-radius: 0.25rem;
+        }
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .dashboard-card {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .dashboard-card .card {
+            width: 18rem;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-dark sticky-top">
+    <nav class="navbar navbar-dark fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand ms-3" href="#">Hotel Admin</a>
+            <a class="navbar-brand ms-3" href="{% url 'base_admin'%}">Hotel Admin</a>
             <ul class="navbar-nav ms-auto d-flex flex-row">
                 <li class="nav-item">
                     <a class="nav-link text-white" href="{% url 'logout' %}">Logout</a>
@@ -51,13 +92,19 @@
             <nav class="col-md-3 col-lg-2 d-md-block sidebar p-3">
                 <ul class="nav flex-column">
                     <li class="nav-item">
+                        <a class="nav-link {% if active == 'dashboard' %}active{% endif %}" href="{% url 'base_admin' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if active == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Dashboard</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if active == 'guests' %}active{% endif %}" href="{% url 'guest_list'%}">Guests</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if active == 'employees' %}active{% endif %}" href="{%url 'employee_list'%}">Employees</a>
+                        <a class="nav-link {% if active == 'employees' %}active{% endif %}" href="{% url 'employee_list'%}">Employees</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active == 'room_type' %}active{% endif %}" href="{% url 'room_type_list'%}">Room Type</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if active == 'rooms' %}active{% endif %}" href="#">Rooms</a>
@@ -77,12 +124,82 @@
             <!-- Main content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                 {% block content %}
+                <div class="main-content">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <strong>Welcome!</strong> You have successfully logged in.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Rooms</h5>
+                                <p>120</p>
+                            </div>
+                        </div>
+                        <div class="card text-white bg-success">
+                            <div class="card-body">
+                                <h5 class="card-title">Occupied Rooms</h5>
+                                <p>80</p>
+                            </div>
+                        </div>
+                        <div class="card text-white bg-danger">
+                            <div class="card-body">
+                                <h5 class="card-title">Available Rooms</h5>
+                                <p>40</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Recent Guests</h4>
+                            <div class="card">
+                                <div class="card-header">
+                                    Latest Bookings
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Guest Name</th>
+                                                <th scope="col">Room Type</th>
+                                                <th scope="col">Check-in</th>
+                                                <th scope="col">Check-out</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>John Doe</td>
+                                                <td>Deluxe</td>
+                                                <td>2024-12-01</td>
+                                                <td>2024-12-07</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Jane Smith</td>
+                                                <td>Standard</td>
+                                                <td>2024-12-02</td>
+                                                <td>2024-12-05</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Robert Brown</td>
+                                                <td>Suite</td>
+                                                <td>2024-12-03</td>
+                                                <td>2024-12-10</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% endblock %}
             </main>
         </div>
     </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
