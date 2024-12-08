@@ -238,6 +238,7 @@ class Room(models.Model):
     class Meta:
         managed = False
         db_table = 'room'
+        unique_together = ('room_number', 'branch')
 
 
 class RoomType(models.Model):

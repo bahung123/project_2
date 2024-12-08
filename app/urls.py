@@ -35,6 +35,9 @@ urlpatterns = [
     path('base_admin/room_type/', view_admin.room_type_list, name='room_type_list'),
     path('base_admin/room_type/<int:pk>/', view_admin.room_type_list, name='room_type_detail'),
 
+    path('base_admin/room/', view_admin.room_list, name='room_list'),
+    path('base_admin/room/<int:pk>/', view_admin.room_list, name='room_detail'),
+
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

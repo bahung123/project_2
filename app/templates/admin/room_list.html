@@ -1,0 +1,299 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-xxl py-5">
+    <div class="container">
+        <!-- Thông báo hệ thống -->
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Tiêu đề -->
+        <div class="text-center mb-5">
+            <h1 class="section-title text-primary text-uppercase">Room List</h1>
+        </div>
+
+        <!-- Thanh tìm kiếm và chọn chi nhánh -->
+        {% if action == 'list' %}
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-6">
+                <form method="GET" action="{% url 'room_list' %}" class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search rooms..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+            </div>
+            <div class="col-md-4 mt-3 mt-md-0">
+                <form method="GET" action="{% url 'room_list' %}">
+                    <label for="branch" class="form-label">Select Branch</label>
+                    <select name="branch" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Branches</option>
+                        {% for branch in branches %}
+                            <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id|stringformat:"s" %}selected{% endif %}>
+                                {{ branch.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+            <div class="col-md-2 text-end mt-3 mt-md-0">
+                <a href="{% url 'room_list' %}?action=add" class="btn btn-success w-100">Add Room</a>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Nội dung chính -->
+        <div class="row g-4">
+            {% if action == 'view' %}
+            <!-- Chi tiết phòng -->
+            <div class="col-12">
+                <h2 class="text-center mb-4">Room Details: {{ room.room_number }}</h2>
+                <table class="table table-bordered">
+                    <tr>
+                        <th>Room Number</th>
+                        <td>{{ room.room_number }}</td>
+                    </tr>
+                    <tr>
+                        <th>Branch</th>
+                        <td>{{ room.branch.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Address</th>
+                        <td>{{ room.branch.address }}, {{ room.branch.city }}</td>
+                    </tr>
+                    <tr>
+                        <th>Room Type</th>
+                        <td>
+                            {% if room.room_type %}
+                                {{ room.room_type.name }}
+                            {% else %}
+                                No type assigned
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
+                        <td>{{ room.status }}</td>
+                    </tr>
+                    <tr>
+                        <th>Description</th>
+                        <td>{{ room.description|default:"No description available." }}</td>
+                    </tr>
+                    <tr>
+                        <th>Images</th>
+                        <td>
+                            <div class="row">
+                                {% for image in room.images %}
+                                    <div class="col-md-3 col-sm-4 mb-2">
+                                        <a href="{{ image.image_file.url }}" target="_blank">
+                                            <img src="{{ image.image_file.url }}" alt="Room Image" 
+                                                 class="img-fluid img-thumbnail" 
+                                                 style="cursor: pointer; border: 2px solid #ddd; border-radius: 5px;">
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="text-center">
+                    <a href="{% url 'room_detail' room.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'room_detail' room.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
+                </div>
+            </div>            
+                {% elif action == 'edit' %}
+                <!-- Form chỉnh sửa phòng -->
+                <div class="col-12">
+                    <h1>Edit Room: {{ room.room_number }}</h1>
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                
+                        <!-- Số phòng -->
+                        <div class="mb-3">
+                            <label for="room_number" class="form-label">Room Number</label>
+                            <input type="text" id="room_number" name="room_number" class="form-control" value="{{ room.room_number }}" required>
+                        </div>
+                
+                        <!-- Loại phòng -->
+                        <div class="mb-3">
+                            <label for="room_type" class="form-label">Room Type</label>
+                            <select id="room_type" name="room_type" class="form-select" required>
+                                {% for type in room_types %}
+                                    <option value="{{ type.id }}" {% if room.room_type.id == type.id %}selected{% endif %}>
+                                        {{ type.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                
+                        <!-- Tình trạng phòng -->
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <input type="text" id="status" name="status" class="form-control" value="{{ room.status }}" required>
+                        </div>
+                
+                        <!-- Mô tả -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea id="description" name="description" class="form-control">{{ room.description }}</textarea>
+                        </div>
+                
+                        <!-- Hình ảnh -->
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Images</label>
+                            <input type="file" id="images" name="images" class="form-control" multiple>
+                            <div class="mt-2">
+                                <p>Current Images:</p>
+                                <div class="d-flex flex-wrap">
+                                    {% for image in room.images %}
+                                        <div class="me-2 mb-2">
+                                            <img src="{{ image.image_file.url }}" alt="Room Image" class="img-fluid rounded" style="max-width: 100px;">
+                                            <!-- Button xóa ảnh -->
+                                            <button type="submit" class="btn btn-danger btn-sm" name="delete_image_id" value="{{ image.id }}">Delete</button>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                
+                        <!-- Nút lưu thay đổi -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                        
+                    </form>
+                </div>
+            {% elif action == 'add' %}
+                <!-- Form thêm phòng -->
+                <div class="col-12">
+                    <h2 class="text-center mb-4">Add Room</h2>
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="room_number" class="form-label">Room Number</label>
+                            <input type="text" id="room_number" name="room_number" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="room_type" class="form-label">Room Type</label>
+                            <select id="room_type" name="room_type" class="form-select">
+                                {% for type in room_types %}
+                                    <option value="{{ type.id }}">{{ type.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="branch" class="form-label">Branch</label>
+                            <select id="branch" name="branch" class="form-select" required>
+                                {% for branch in branches %}
+                                    <option value="{{ branch.id }}">{{ branch.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <input type="text" id="status" name="status" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea id="description" name="description" class="form-control"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Upload Images</label>
+                            <input type="file" id="images" name="images" class="form-control" multiple>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Add Room</button>
+                        </div>
+                    </form>
+                </div>
+
+            {% elif action == 'delete' %}
+                <!-- Xác nhận xóa phòng -->
+                <div class="col-12">
+                    <h2 class="text-center mb-4">Delete Room: {{ room.name }}</h2>
+                    <p class="text-center">Are you sure you want to delete this room?</p>
+                    <form method="POST" class="text-center">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+
+            {% else %}
+                <!-- Danh sách phòng -->
+                {% for room in page_obj %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="room-item shadow rounded">
+                        <div class="position-relative">
+                            {% if room.images %}
+                                <div class="swiper-container">
+                                    <div class="swiper-wrapper">
+                                        <!-- Hiển thị chỉ ảnh đầu tiên -->
+                                        <div class="swiper-slide">
+                                            <img class="img-fluid" src="{{ room.images.0.image_file.url }}" alt="Room Image">
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <img class="img-fluid" src="{% static 'images/default-room.jpg' %}" alt="Default Image">
+                            {% endif %}
+                        </div>
+                        <div class="p-3">
+                            <h5>{{ room.room_number|default:"Unknown Room" }}</h5>
+                            <p>{{ room.description|default:"No description available." }}</p>
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'room_detail' room.id %}?action=view" class="btn btn-primary btn-sm">View</a>
+                                <a href="{% url 'room_detail' room.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
+                                <a href="{% url 'room_detail' room.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}                
+            {% endif %}
+        </div>
+        <!-- Phân trang -->
+        <div class="d-flex justify-content-center mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1&branch={{ selected_branch_id }}&search={{ search_query }}" aria-label="First">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&branch={{ selected_branch_id }}&search={{ search_query }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item disabled">
+                        <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}&branch={{ selected_branch_id }}&search={{ search_query }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&branch={{ selected_branch_id }}&search={{ search_query }}" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}
