@@ -75,7 +75,7 @@ class RoomTypeAdmin(admin.ModelAdmin):
     list_display = ('name', 'base_price', 'description', 'min_area', 'max_area', 'num_beds')
 
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ('branch', 'service_name', 'price', 'description')
+    list_display = ('service_name', 'price', 'description')
 
 class ServiceUsageAdmin(admin.ModelAdmin):
     list_display = ('reservation', 'service', 'quantity', 'date_used')

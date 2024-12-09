@@ -38,6 +38,9 @@ urlpatterns = [
     path('base_admin/room/', view_admin.room_list, name='room_list'),
     path('base_admin/room/<int:pk>/', view_admin.room_list, name='room_detail'),
 
+    path('base_admin/service/', view_admin.service_list, name='service_list'),
+    path('base_admin/service/<int:pk>/', view_admin.service_list, name='service_detail'),
+
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
