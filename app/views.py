@@ -58,6 +58,10 @@ def login(request):
 
     return render(request, 'user/login.html')
 
+
+
+
+
 def logout_view(request):
     logout(request)
     return redirect('login')
@@ -115,39 +119,19 @@ def account_info(request):
         'guest': guest,
     })
 
+
 @login_required
 def update_account_info(request):
     if request.method == 'POST':
         user = request.user
+        guest = Guest.objects.get(user_id=user.id)
 
-        # Lấy thông tin của Guest dựa trên user.id
-        guest = Guest.objects.filter(user_id=user.id).first()
-        if not guest:
-            messages.error(request, 'Guest information not found.')
-            return redirect('account_info')
-        #kiểm tra xem email đã tồn tại trừ chính user đó không
-        if User.objects.filter(email=request.POST.get('email')).exclude(id=user.id).exists():
-            messages.error(request, 'Email already exists')
-            return redirect('account_info')
-        #kiểm tra xem id_card đã tồn tại trừ chính user đó không
-        if Guest.objects.filter(id_card=request.POST.get('id_card')).exclude(user_id=user.id).exists():
-            messages.error(request, 'ID Card already exists')
-            return redirect('account_info')
-        #kiểm tra xem phone_number đã tồn tại trừ chính user đó không
-        if Guest.objects.filter(phone_number=request.POST.get('phone_number')).exclude(user_id=user.id).exists():
-            messages.error(request, 'Phone Number already exists')
-            return redirect('account_info')
-
-        # Cập nhật thông tin
-        guest.full_name = request.POST.get('full_name', guest.full_name)
-        guest.phone_number = request.POST.get('phone_number', guest.phone_number)
-        guest.email = request.POST.get('email', guest.email)
-        guest.address = request.POST.get('address', guest.address)
-        guest.id_card = request.POST.get('id_card', guest.id_card)
-        guest.has_account = 1  # Đánh dấu rằng khách hàng đã có tài khoản
-
-        # Cập nhật thông tin của AuthUser (email)
-        user.email = request.POST.get('email', user.email)
+        # Cập nhật thông tin của người dùng
+        guest.full_name = request.POST['full_name']
+        user.email = request.POST['email']
+        guest.phone_number = request.POST['phone_number']
+        guest.address = request.POST['address']
+        guest.id_card = request.POST['id_card']  # Cập nhật id_card từ form
 
         # Lưu thông tin
         user.save()
@@ -249,7 +233,6 @@ def booking(request):
             # Tạo reservation
             with transaction.atomic():
                 reservation = Reservation.objects.create(
-                    branch=branch,
                     guest=guest,
                     check_in_date=check_in_date,
                     check_out_date=check_out_date,

@@ -206,9 +206,7 @@ class Payment(models.Model):
         managed = False
         db_table = 'payment'
 
-
 class Reservation(models.Model):
-    branch = models.ForeignKey(Branch, models.DO_NOTHING)
     guest = models.ForeignKey(Guest, models.DO_NOTHING)
     check_in_date = models.DateField()
     check_out_date = models.DateField()

@@ -66,7 +66,7 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ('bill', 'amount', 'payment_date', 'payment_method', 'transaction_id')
 
 class ReservationAdmin(admin.ModelAdmin):
-    list_display = ('branch', 'guest', 'check_in_date', 'check_out_date', 'status')
+    list_display = ('guest', 'check_in_date', 'check_out_date', 'status')
 
 class RoomAdmin(admin.ModelAdmin):
     list_display = ('room_number', 'room_type', 'status', 'description')
