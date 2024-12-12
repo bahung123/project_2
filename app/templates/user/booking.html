@@ -7,14 +7,11 @@
 
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
         {% endfor %}
     {% endif %}
 
-    <form id="searchForm" method="GET" action="{% url 'booking' %}" onsubmit="searchRooms(event)">
+    <form id="searchForm" method="GET" action="{% url 'search_rooms' %}" onsubmit="searchRooms(event)">
         {% csrf_token %}
         
         <!-- Customer Information -->
@@ -71,6 +68,18 @@
         <!-- Booking Information -->
         <h3 class="mb-3">Choose Room Type</h3>
         <div class="form-group mb-3">
+            <label for="branch" class="form-label">Branch Address *</label>
+            <select class="form-control" id="branch" name="branch" required>
+                <option value="">Select Branch Address</option>
+                {% for b in branches %}
+                    <option value="{{ b.id }}" 
+                            {% if b.id|stringformat:"s" == branch_id %}selected{% endif %}>
+                        {{ b.address }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mb-3">
             <label for="room_type" class="form-label">Room Type *</label>
             <select class="form-control" id="room_type" name="room_type" required>
                 <option value="">Select Room Type</option>
@@ -82,31 +91,18 @@
                 {% endfor %}
             </select>
         </div>
-
         <div class="form-group mb-3">
             <label for="check_in" class="form-label">Check-in Date *</label>
-            <input type="date" class="form-control" id="check_in" name="check_in" 
-                   value="{{ check_in }}" 
-                   min="{{ today|date:'Y-m-d' }}"
-                   required>
+            <input type="date" class="form-control" id="check_in" name="check_in" value="{{ check_in }}" required>
         </div>
-
         <div class="form-group mb-3">
             <label for="check_out" class="form-label">Check-out Date *</label>
-            <input type="date" class="form-control" id="check_out" name="check_out" 
-                   value="{{ check_out }}" 
-                   min="{{ today|date:'Y-m-d' }}"
-                   required>
+            <input type="date" class="form-control" id="check_out" name="check_out" value="{{ check_out }}" required>
         </div>
-
-        <div class="d-flex justify-content-center">
-            <button type="submit" class="btn btn-primary">Search Available Rooms</button>
-        </div>
+        <button type="submit" class="btn btn-primary">Search Rooms</button>
     </form>
 
-    <div id="searchResults" class="mt-4">
-        <!-- Search results will be loaded here -->
-    </div>
+    <div id="searchResults" class="mt-4"></div>
 </div>
 
 <script>
@@ -129,145 +125,85 @@ function searchRooms(event) {
         return;
     }
 
-    document.getElementById('searchResults').innerHTML = `
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
-    `;
-
     const formData = new FormData(document.getElementById('searchForm'));
     const searchParams = new URLSearchParams(formData);
 
     fetch(`{% url 'search_rooms' %}?${searchParams.toString()}`, {
         method: 'GET',
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json'
         },
         credentials: 'same-origin'
     })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                document.getElementById('searchResults').innerHTML = `
-                    <div class="alert alert-danger">
-                        ${data.error}
-                    </div>
-                `;
-                return;
-            }
-
-            let html = '';
-            if (data.rooms && data.rooms.length > 0) {
-                html += `
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input type="checkbox" id="selectAll" class="form-check-input">
-                            <label class="form-check-label" for="selectAll">Select All</label>
-                        </div>
-                    </div>
-                    <form id="bookingForm" method="POST" action="{% url 'booking' %}">
-                        <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
-                        <input type="hidden" name="check_in" value="${document.getElementById('check_in').value}">
-                        <input type="hidden" name="check_out" value="${document.getElementById('check_out').value}">
-                        <input type="hidden" name="guest_name" value="${document.getElementById('guest_name').value}">
-                        <input type="hidden" name="guest_email" value="${document.getElementById('guest_email').value}">
-                        <input type="hidden" name="guest_phone" value="${document.getElementById('guest_phone').value}">
-                        <input type="hidden" name="guest_id_card" value="${document.getElementById('guest_id_card').value}">
-                        <input type="hidden" name="guest_address" value="${document.getElementById('guest_address').value}"> <!-- Added to save address -->
-                        <ul class="list-group mb-3">
-                `;
-
-                data.rooms.forEach(room => {
-                    html += `
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input room-checkbox" 
-                                       name="selected_rooms" 
-                                       value="${room.id}" 
-                                       id="room_${room.id}">
-                                <label class="form-check-label" for="room_${room.id}">
-                                    Room ${room.room_number} - ${room.room_type_name}
-                                </label>
-                            </div>
-                            <span class="badge bg-primary rounded-pill">$${room.price}/night</span>
-                        </li>
-                    `;
-                });
-
-                html += `
-                        </ul>
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h5 class="card-title">Booking Summary</h5>
-                                <p class="card-text">Number of Nights: ${data.numberOfNights}</p>
-                                <p class="card-text">Selected Rooms: <span id="selectedRoomCount">0</span></p>
-                                <p class="card-text">Total Amount: $<span id="totalAmount">0</span></p>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-center">
-                            <button type="submit" class="btn btn-success btn-lg" id="confirmButton" disabled>
-                                Confirm Booking
-                            </button>
-                        </div>
-                    </form>
-                `;
-            } else {
-                html = '<div class="alert alert-warning">No available rooms for your selected dates.</div>';
-            }
-
-            document.getElementById('searchResults').innerHTML = html;
-            
-            initializeEventListeners(data.pricePerNight, data.numberOfNights);
-        })
-        .catch(error => {
-            document.getElementById('searchResults').innerHTML = `
-                <div class="alert alert-danger">
-                    An error occurred while searching for rooms. Please try again.
-                </div>
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById('searchResults').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+        } else {
+            let roomsHtml = `
+                <form id="bookingForm" method="POST" action="{% url 'booking' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="guest_name" value="${document.getElementById('guest_name').value}">
+                    <input type="hidden" name="guest_email" value="${document.getElementById('guest_email').value}">
+                    <input type="hidden" name="guest_phone" value="${document.getElementById('guest_phone').value}">
+                    <input type="hidden" name="guest_address" value="${document.getElementById('guest_address').value}">
+                    <input type="hidden" name="guest_id_card" value="${document.getElementById('guest_id_card').value}">
+                    <input type="hidden" name="branch" value="${document.getElementById('branch').value}">
+                    <input type="hidden" name="check_in" value="${document.getElementById('check_in').value}">
+                    <input type="hidden" name="check_out" value="${document.getElementById('check_out').value}">
+                    <h3 class="mb-3">Available Rooms</h3>
+                    <div class="form-check">
             `;
-            console.error('Error:', error);
-        });
+            
+            data.rooms.forEach(room => {
+                roomsHtml += `
+                    <input class="form-check-input room-checkbox" type="checkbox" name="selected_rooms" 
+                           value="${room.id}" id="room_${room.id}">
+                    <label class="form-check-label" for="room_${room.id}">
+                        Room ${room.room_number} - ${room.room_type_name} - $${room.price} / night
+                    </label><br>
+                `;
+            });
+            
+            roomsHtml += `
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary" id="confirmButton" disabled>Confirm Booking</button>
+                    </div>
+                    <div class="mt-3">
+                        <p>Selected Rooms: <span id="selectedRoomCount">0</span></p>
+                        <p>Total Amount: $<span id="totalAmount">0.00</span></p>
+                    </div>
+                </form>
+            `;
+            
+            document.getElementById('searchResults').innerHTML = roomsHtml;
+            initializeEventListeners(data.pricePerNight, data.numberOfNights);
+        }
+    })
+    .catch(error => {
+        document.getElementById('searchResults').innerHTML = `<div class="alert alert-danger">An error occurred: ${error}</div>`;
+    });
 }
 
 function initializeEventListeners(pricePerNight, numberOfNights) {
-    const selectAllCheckbox = document.getElementById('selectAll');
     const roomCheckboxes = document.querySelectorAll('.room-checkbox');
     const confirmButton = document.getElementById('confirmButton');
     const selectedRoomCount = document.getElementById('selectedRoomCount');
     const totalAmountSpan = document.getElementById('totalAmount');
 
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function() {
-            roomCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-            });
-            updateTotals();
-        });
-    }
-
     roomCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const allChecked = Array.from(roomCheckboxes).every(cb => cb.checked);
-            if (selectAllCheckbox) {
-                selectAllCheckbox.checked = allChecked;
-            }
-            updateTotals();
+        checkbox.addEventListener('change', () => {
+            const selectedRooms = document.querySelectorAll('.room-checkbox:checked');
+            const selectedCount = selectedRooms.length;
+            const totalAmount = selectedCount * pricePerNight * numberOfNights;
+            
+            selectedRoomCount.textContent = selectedCount;
+            totalAmountSpan.textContent = totalAmount.toFixed(2);
+            confirmButton.disabled = selectedCount === 0;
         });
     });
-
-    function updateTotals() {
-        const selectedRooms = document.querySelectorAll('.room-checkbox:checked');
-        const count = selectedRooms.length;
-        const total = (count * parseFloat(pricePerNight) * parseInt(numberOfNights)).toFixed(2);
-
-        selectedRoomCount.textContent = count;
-        totalAmountSpan.textContent = total;
-        if (confirmButton) {
-            confirmButton.disabled = count === 0;
-        }
-    }
 }
 </script>
 {% endblock %}

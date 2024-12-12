@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from app.models import RoomType, Image, Guest, Service, Reservation, Room, ReservationRoom,Employee
+from app.models import RoomType, Image, Guest, Service, Reservation, Room, ReservationRoom,Employee,Branch
 from django.contrib.auth.models import User
 from datetime import datetime
 from django.http import HttpResponse, JsonResponse
@@ -258,10 +258,12 @@ def booking(request):
 
     # GET request
     room_types = RoomType.objects.all()
+    branches = Branch.objects.all()  # Lấy tất cả các branch
     
     # Lấy thông tin khách hàng từ user đã đăng nhập
     context = {
         'room_types': room_types,
+        'branches': branches,
         'today': datetime.now().date(),
     }
     
@@ -301,6 +303,7 @@ def booking(request):
         'room_type_id': request.GET.get('room_type', ''),
         'check_in': request.GET.get('check_in', ''),
         'check_out': request.GET.get('check_out', ''),
+        'branch_id': request.GET.get('branch', ''),
     })
 
     return render(request, 'user/booking.html', context)
@@ -311,8 +314,9 @@ def search_rooms(request):
         check_in = request.GET.get('check_in', '').strip()
         check_out = request.GET.get('check_out', '').strip()
         room_type_id = request.GET.get('room_type', '').strip()
-        
-        if not all([check_in, check_out, room_type_id]):
+        branch_id = request.GET.get('branch', '').strip()
+
+        if not all([check_in, check_out, room_type_id, branch_id]):
             return JsonResponse({'error': 'Please fill in all required fields'})
 
         try:
@@ -330,11 +334,16 @@ def search_rooms(request):
 
         number_of_nights = (check_out_date - check_in_date).days
 
-        # Get room type
+        # Get room type and branch
         try:
             room_type = RoomType.objects.get(id=room_type_id)
         except RoomType.DoesNotExist:
             return JsonResponse({'error': 'Invalid room type selected'})
+
+        try:
+            branch = Branch.objects.get(id=branch_id)
+        except Branch.DoesNotExist:
+            return JsonResponse({'error': 'Invalid branch selected'})
 
         price_per_night = float(room_type.base_price)
 
@@ -346,25 +355,32 @@ def search_rooms(request):
 
         # Get available rooms
         rooms = Room.objects.filter(
-            room_type_id=room_type_id
+            room_type_id=room_type_id,
+            branch_id=branch_id
         ).exclude(id__in=rooms_reserved)
 
         if not rooms.exists():
-            return JsonResponse({'error': 'No rooms available for the selected dates'})
+            return JsonResponse({'error': 'No rooms available for the selected dates and branch'})
 
         # Convert rooms to dict
         rooms_data = [{
             'id': room.id,
             'room_number': room.room_number,
             'room_type_name': room.room_type.name,
-            'price': price_per_night
+            'price': price_per_night,
+            'branch_address': branch.address  # Thêm địa chỉ chi nhánh vào kết quả trả về
         } for room in rooms]
 
         return JsonResponse({
             'rooms': rooms_data,
             'numberOfNights': number_of_nights,
-            'pricePerNight': price_per_night
+            'pricePerNight': price_per_night,
+            'branch_address': branch.address  # Thêm địa chỉ chi nhánh vào kết quả trả về
         })
 
     except Exception as e:
+        import traceback
+        print("An error occurred while searching for rooms:")  # In thông báo lỗi
+        print(traceback.format_exc())  # In chi tiết lỗi ra console/log
         return JsonResponse({'error': f'An error occurred: {str(e)}'})
+                            
