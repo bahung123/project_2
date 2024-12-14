@@ -79,9 +79,18 @@
         <div class="container-fluid">
             <a class="navbar-brand ms-3" href="{% url 'base_admin'%}">Hotel Admin</a>
             <ul class="navbar-nav ms-auto d-flex flex-row">
-                <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'logout' %}">Logout</a>
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle fs-3" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle"></i> <!-- Biểu tượng người dùng -->
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{%url 'account_info'%}">Account Info</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                    </ul>
                 </li>
+                {% endif %}
             </ul>
         </div>
     </nav>

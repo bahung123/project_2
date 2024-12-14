@@ -9,6 +9,7 @@ from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
 from django.db import transaction
 from django.views.decorators.csrf import csrf_protect
+from django.utils.timezone import now
 
 
 def index(request):
@@ -201,7 +202,9 @@ def booking(request):
             guest_email = request.POST.get('guest_email')
             guest_phone = request.POST.get('guest_phone')
             guest_id_card = request.POST.get('guest_id_card')
-            guest_address = request.POST.get('guest_address', '')  # Ensure address is captured even if empty
+            guest_address = request.POST.get('guest_address', '') 
+            deposit_amount = request.POST.get('deposit_amount', 0)
+
             # Debug information
             print("DEBUG: Form data received:")
             print(f"Selected rooms: {selected_rooms}")
@@ -234,8 +237,10 @@ def booking(request):
             with transaction.atomic():
                 reservation = Reservation.objects.create(
                     guest=guest,
+                    book_date=datetime.now(),
                     check_in_date=check_in_date,
                     check_out_date=check_out_date,
+                    deposit_amount=deposit_amount,
                     status='pending'  # hoặc trạng thái phù hợp
                 )
 
@@ -371,10 +376,14 @@ def search_rooms(request):
             'branch_address': branch.address  # Thêm địa chỉ chi nhánh vào kết quả trả về
         } for room in rooms]
 
+        total_price = price_per_night * number_of_nights
+        deposit_amount = total_price * 0.3  # Calculate 30% deposit
+
         return JsonResponse({
             'rooms': rooms_data,
             'numberOfNights': number_of_nights,
             'pricePerNight': price_per_night,
+            'depositAmount': deposit_amount,
             'branch_address': branch.address  # Thêm địa chỉ chi nhánh vào kết quả trả về
         })
 
@@ -383,4 +392,3 @@ def search_rooms(request):
         print("An error occurred while searching for rooms:")  # In thông báo lỗi
         print(traceback.format_exc())  # In chi tiết lỗi ra console/log
         return JsonResponse({'error': f'An error occurred: {str(e)}'})
-                            

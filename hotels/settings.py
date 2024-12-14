@@ -124,3 +124,6 @@ MEDIA_URL = '/media/'  # URL để truy cập file media
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Thư mục lưu file media
 # settings.py
 LOGIN_URL = 'login'  # Tên URL của trang đăng nhập
+# Định dạng ngày tháng
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
+USE_TZ = True

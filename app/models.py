@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User as AuthUser
+from django.utils.timezone import now
 
 
 class AuthGroup(models.Model):
@@ -208,8 +209,10 @@ class Payment(models.Model):
 
 class Reservation(models.Model):
     guest = models.ForeignKey(Guest, models.DO_NOTHING)
+    book_date = models.DateTimeField(blank=True, null=True)
     check_in_date = models.DateField()
     check_out_date = models.DateField()
+    deposit_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     status = models.CharField(max_length=20)
 
     class Meta:

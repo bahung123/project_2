@@ -67,18 +67,26 @@
 
         <!-- Booking Information -->
         <h3 class="mb-3">Choose Room Type</h3>
-        <div class="form-group mb-3">
-            <label for="branch" class="form-label">Branch Address *</label>
-            <select class="form-control" id="branch" name="branch" required>
-                <option value="">Select Branch Address</option>
-                {% for b in branches %}
-                    <option value="{{ b.id }}" 
-                            {% if b.id|stringformat:"s" == branch_id %}selected{% endif %}>
-                        {{ b.address }}
-                    </option>
-                {% endfor %}
-            </select>
+        <div class="form-group mb-3 position-relative">
+            <label for="branch_combobox" class="form-label">Branch Address *</label>
+            <div class="dropdown" id="branchDropdown">
+                <input type="text" class="form-control" id="branch_combobox" 
+                       placeholder="Search or select branch..." 
+                       oninput="filterComboBox()" onclick="toggleDropdown()">
+                <div class="dropdown-menu w-100" id="branchDropdownMenu">
+                    {% for b in branches %}
+                        <button class="dropdown-item" type="button" 
+                                data-value="{{ b.id }}" 
+                                onclick="selectBranch('{{ b.id }}', '{{ b.address }}')">
+                            {{ b.address }}
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+            <input type="hidden" id="branch" name="branch" value="{% if branch_id %}{{ branch_id }}{% endif %}" required>
         </div>
+        
+        
         <div class="form-group mb-3">
             <label for="room_type" class="form-label">Room Type *</label>
             <select class="form-control" id="room_type" name="room_type" required>
@@ -99,7 +107,9 @@
             <label for="check_out" class="form-label">Check-out Date *</label>
             <input type="date" class="form-control" id="check_out" name="check_out" value="{{ check_out }}" required>
         </div>
+        <div class="mt-3 text-center">
         <button type="submit" class="btn btn-primary">Search Rooms</button>
+        </div>
     </form>
 
     <div id="searchResults" class="mt-4"></div>
@@ -152,6 +162,7 @@ function searchRooms(event) {
                     <input type="hidden" name="branch" value="${document.getElementById('branch').value}">
                     <input type="hidden" name="check_in" value="${document.getElementById('check_in').value}">
                     <input type="hidden" name="check_out" value="${document.getElementById('check_out').value}">
+                    <input type="hidden" name="deposit_amount" id="deposit_amount">
                     <h3 class="mb-3">Available Rooms</h3>
                     <div class="form-check">
             `;
@@ -168,12 +179,13 @@ function searchRooms(event) {
             
             roomsHtml += `
                     </div>
-                    <div class="mt-3">
-                        <button type="submit" class="btn btn-primary" id="confirmButton" disabled>Confirm Booking</button>
-                    </div>
-                    <div class="mt-3">
+                    <div class="mt-3 text-center">
                         <p>Selected Rooms: <span id="selectedRoomCount">0</span></p>
                         <p>Total Amount: $<span id="totalAmount">0.00</span></p>
+                        <p>Deposit (30%): $<span id="depositAmount">0.00</span></p>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <button type="submit" class="btn btn-primary" id="confirmButton" disabled>Confirm Booking</button>
                     </div>
                 </form>
             `;
@@ -192,18 +204,54 @@ function initializeEventListeners(pricePerNight, numberOfNights) {
     const confirmButton = document.getElementById('confirmButton');
     const selectedRoomCount = document.getElementById('selectedRoomCount');
     const totalAmountSpan = document.getElementById('totalAmount');
+    const depositAmountSpan = document.getElementById('depositAmount');
 
     roomCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', () => {
             const selectedRooms = document.querySelectorAll('.room-checkbox:checked');
             const selectedCount = selectedRooms.length;
             const totalAmount = selectedCount * pricePerNight * numberOfNights;
+            const depositAmount = totalAmount * 0.3;
             
             selectedRoomCount.textContent = selectedCount;
             totalAmountSpan.textContent = totalAmount.toFixed(2);
+            depositAmountSpan.textContent = depositAmount.toFixed(2);
+            document.getElementById('deposit_amount').value = depositAmount;
             confirmButton.disabled = selectedCount === 0;
         });
     });
 }
+function toggleDropdown() {
+    const menu = document.getElementById('branchDropdownMenu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+function filterComboBox() {
+    const searchText = document.getElementById('branch_combobox').value.toLowerCase();
+    const menu = document.getElementById('branchDropdownMenu');
+    const items = menu.getElementsByClassName('dropdown-item');
+
+    for (let item of items) {
+        const address = item.textContent.toLowerCase();
+        item.style.display = address.includes(searchText) ? '' : 'none';
+    }
+
+    menu.style.display = 'block'; // Hiển thị danh sách khi người dùng nhập
+}
+
+function selectBranch(branchId, branchAddress) {
+    document.getElementById('branch_combobox').value = branchAddress;
+    document.getElementById('branch').value = branchId;
+
+    const menu = document.getElementById('branchDropdownMenu');
+    menu.style.display = 'none'; // Ẩn dropdown sau khi chọn
+}
+
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('branchDropdown');
+    if (!dropdown.contains(e.target)) {
+        document.getElementById('branchDropdownMenu').style.display = 'none';
+    }
+});
 </script>
 {% endblock %}

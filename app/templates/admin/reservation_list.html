@@ -1,0 +1,104 @@
+{% extends 'admin/base_admin.html' %} 
+{% block content %}
+<div class="container-xxl py-5">
+  <div class="container">
+    <!-- Thông báo hệ thống -->
+    {% if messages %}
+    <div class="mb-4">
+      {% for message in messages %}
+      <div
+        class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+    <!--Tiêu đề-->
+    <div class="text-center mb-5">
+        <h1 class="section-title text-primary text-uppercase">Reservation</h1>
+    </div>
+
+    <!--Thanh tìm kiếm và chọn chi nhánh -->
+    {% if action == 'list' %}
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <form method="GET" action="{% url 'reservation_list' %}" class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Search rooms..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+        <div class="col-md-4 mt-3 mt-md-0">
+            <form method="GET" action="{% url 'reservation_list' %}">
+                <label for="branch" class="form-label">Select Branch</label>
+                <select name="branch" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Branches</option>
+                    {% for branch in branches %}
+                        <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id|stringformat:"s" %}selected{% endif %}>
+                            {{ branch.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+        <div class="col-md-2 text-end mt-3 mt-md-0">
+            <a href="{% url 'room_list' %}?action=add" class="btn btn-success w-100">Add Room</a>
+        </div>
+    </div>
+    {% endif %}
+    <!--Nội dung chính-->
+    {% if action == 'view'%}
+    <!--Xem chi tiết reservation-->
+    <div class="col-12">
+      <h2 class="text-center mb-4"> Reservation Details :
+      </h2>
+      <table class="table table-bordered">
+        <tr>
+          <th>Reservation Id</th>
+          <td>{{reservation.id}}</td>
+        </tr>
+        <tr>
+          <th>Guest</th>
+          <td>{{reservation.guest.full_name}}</td>
+        </tr>
+        <tr>
+          <th>Phone Number</th>
+          <td>{{reservation.guest.phone_number}}</td>
+        </tr>
+        <tr>
+          <th>Book Date</th>
+          <td>{{reservation.book_date}}</td>
+        </tr>
+        <tr>
+          <th>Check In</th>
+          <td>{{reservation.check_in_date}}</td>
+        </tr>
+        <tr>
+          <th>Check Out</th>
+          <td>{{reservation.check_out_date}}</td>
+        </tr>
+        <tr>
+          <th>Status</th>
+          <td>{{reservation.status}}</td>
+        </tr>
+
+      </table>
+
+    </div>
+
+
+
+
+
+
+
+
+</div>
