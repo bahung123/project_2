@@ -27,7 +27,17 @@ def employee_list(request, pk=None):
             )
         else:
             employees = Employee.objects.all()  # Lấy tất cả nhân viên nếu không có tìm kiếm
-        context['employees'] = employees
+        
+        # Phân trang
+        paginator = Paginator(employees, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        context={
+            'employees': page_obj,
+            'search_query': search_query,
+            'page_obj': page_obj,
+        }
+
         return render(request, 'admin/employee_list.html', context)
 
     

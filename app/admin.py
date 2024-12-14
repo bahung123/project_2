@@ -4,7 +4,7 @@ from .models import (
     AuthGroup, AuthGroupPermissions, AuthPermission, AuthUser, 
     AuthUserGroups, AuthUserUserPermissions, Bill, Branch, 
     DjangoAdminLog, DjangoContentType, DjangoMigrations, DjangoSession, 
-    Employee, Feedback, Guest, Image, Payment, Reservation, Room, 
+    Employee, Feedback, Guest, Image, Reservation, Room, 
     RoomType, Service, ServiceUsage ,ReservationRoom
 )
 
@@ -62,11 +62,8 @@ class GuestAdmin(admin.ModelAdmin):
 class ImageAdmin(admin.ModelAdmin):
     list_display = ('room_id', 'room_type_id', 'image_file', 'description', 'service_id')
 
-class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('bill', 'amount', 'payment_date', 'payment_method', 'transaction_id')
-
 class ReservationAdmin(admin.ModelAdmin):
-    list_display = ('guest','book_date', 'check_in_date', 'check_out_date','deposit_amount', 'status')
+    list_display = ('guest','book_date', 'check_in_date', 'check_out_date','check_in_time','check_out_time','deposit_amount', 'status')
 
 class RoomAdmin(admin.ModelAdmin):
     list_display = ('room_number', 'room_type', 'status', 'description')
@@ -102,7 +99,6 @@ admin.site.register(Employee, EmployeeAdmin)
 admin.site.register(Feedback, FeedbackAdmin)
 admin.site.register(Guest, GuestAdmin)
 admin.site.register(Image, ImageAdmin)
-admin.site.register(Payment, PaymentAdmin)
 admin.site.register(Reservation, ReservationAdmin)
 admin.site.register(Room, RoomAdmin)
 admin.site.register(RoomType, RoomTypeAdmin)

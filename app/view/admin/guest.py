@@ -27,7 +27,17 @@ def guest_list(request, pk=None):
             )
         else:
             guests = Guest.objects.all()
-        context['guests'] = guests
+        
+        # Phân trang
+        paginator = Paginator(guests, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context = {
+        'guests': page_obj,
+        'search_query': search_query,
+        'page_obj': page_obj,
+    }
         return render(request, 'admin/guest_list.html', context)
 
     elif action == 'view' and pk:

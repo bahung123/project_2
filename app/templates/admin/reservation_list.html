@@ -1,104 +1,170 @@
-{% extends 'admin/base_admin.html' %} 
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
 {% block content %}
-<div class="container-xxl py-5">
-  <div class="container">
-    <!-- Thông báo hệ thống -->
-    {% if messages %}
-    <div class="mb-4">
-      {% for message in messages %}
-      <div
-        class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show"
-        role="alert"
-      >
-        {{ message }}
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-        ></button>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-    <!--Tiêu đề-->
-    <div class="text-center mb-5">
-        <h1 class="section-title text-primary text-uppercase">Reservation</h1>
-    </div>
-
-    <!--Thanh tìm kiếm và chọn chi nhánh -->
-    {% if action == 'list' %}
-    <div class="row mb-4 align-items-center">
-        <div class="col-md-6">
-            <form method="GET" action="{% url 'reservation_list' %}" class="input-group">
-                <input type="text" name="search" class="form-control" placeholder="Search rooms..." value="{{ search_query }}">
-                <button type="submit" class="btn btn-primary">Search</button>
-            </form>
+<div class="container-fluid py-5">
+    <div class="container-fluid">
+        <!-- System Messages -->
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
         </div>
-        <div class="col-md-4 mt-3 mt-md-0">
-            <form method="GET" action="{% url 'reservation_list' %}">
-                <label for="branch" class="form-label">Select Branch</label>
-                <select name="branch" class="form-select" onchange="this.form.submit()">
-                    <option value="">All Branches</option>
-                    {% for branch in branches %}
-                        <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id|stringformat:"s" %}selected{% endif %}>
-                            {{ branch.name }}
-                        </option>
+        {% endif %}
+
+        <!-- Title -->
+        <div class="text-center mb-5">
+            <h1 class="section-title text-primary text-uppercase">Reservation List</h1>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-6">
+                <form method="GET" action="{% url 'reservation_list' %}" class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search reservations..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+            </div>
+            <!-- Replace the status filter section -->
+            <div class="col-md-4">
+                <form method="GET" action="{% url 'reservation_list' %}" id="statusForm">
+                    <!-- Preserve search parameter if exists -->
+                    {% if search_query %}
+                        <input type="hidden" name="search" value="{{ search_query }}">
+                    {% endif %}
+                    <select name="status" class="form-select" onchange="document.getElementById('statusForm').submit()">
+                        <option value="">All Status</option>
+                        {% for status_value, status_label in status_choices %}
+                            <option value="{{ status_value }}" {% if status == status_value %}selected{% endif %}>
+                                {{ status_label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <!-- Table content -->
+        <div class="table-responsive">
+            <table class="table table-hover" style="min-width: 1000px;">
+                <thead>
+                    <tr>
+                        <th style="width: 5%">ID</th>
+                        <th style="width: 15%">Guest</th>
+                        <th style="width: 20%">Contact</th>
+                        <th style="width: 15%">Room(s)</th>
+                        <th style="width: 10%">Book Date</th>
+                        <th style="width: 10%">Check In</th>
+                        <th style="width: 10%">Check Out</th>
+                        <th style="width: 10%">Deposit</th>
+                        <th style="width: 7%">Status</th>
+                        <th style="width: 8%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reservation in reservations %}
+                    <tr>
+                        <td>{{ reservation.id }}</td>
+                        <td>{{ reservation.guest.full_name }}</td>
+                        <td>
+                            <small>
+                                Email: {{ reservation.guest.email }}<br>
+                                Phone: {{ reservation.guest.phone_number }}
+                            </small>
+                        </td>
+                        <td class="text-nowrap">
+                            {% for res_room in reservation.reservationroom_set.all %}
+                                <span class="badge bg-info">
+                                    {{ res_room.room.room_number }}
+                                </span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ reservation.book_date }}</td>
+                        <td>{{ reservation.check_in_date }}</td>
+                        <td>{{ reservation.check_out_date }}</td>
+                        <td>${{ reservation.deposit_amount }}</td>
+                        <td>
+                            <span class="badge bg-{% if reservation.status == 'confirmed' %}success{% elif reservation.status == 'pending' %}warning{% elif reservation.status == 'checked_in' %}primary{% elif reservation.status == 'checked_out' %}info{% else %}danger{% endif %}">
+                                {{ reservation.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ reservation.id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ reservation.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+
+                            <!-- Edit Modal -->
+                            <div class="modal fade" id="editModal{{ reservation.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Edit Reservation</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{% url 'reservation_edit' reservation.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label>Status</label>
+                                                    <select name="status" class="form-select">
+                                                        <option value="pending" {% if reservation.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                        <option value="confirmed" {% if reservation.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                                        <option value="checked_in" {% if reservation.status == 'checked_in' %}selected{% endif %}>Checked In</option>
+                                                        <option value="checked_out" {% if reservation.status == 'checked_out' %}selected{% endif %}>Checked Out</option>
+                                                        <option value="cancelled" {% if reservation.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button type="submit" class="btn btn-primary">Save changes</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Delete Modal -->
+                            <div class="modal fade" id="deleteModal{{ reservation.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Delete Reservation</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete this reservation?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{% url 'reservation_delete' reservation.id %}" method="POST">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
                     {% endfor %}
-                </select>
-            </form>
+                </tbody>
+            </table>
         </div>
-        <div class="col-md-2 text-end mt-3 mt-md-0">
-            <a href="{% url 'room_list' %}?action=add" class="btn btn-success w-100">Add Room</a>
-        </div>
+
+        <!-- Update pagination include path -->
+        {% if page_obj.paginator.num_pages > 1 %}
+            {% include 'include/pagination.html' %}
+        {% endif %}
     </div>
-    {% endif %}
-    <!--Nội dung chính-->
-    {% if action == 'view'%}
-    <!--Xem chi tiết reservation-->
-    <div class="col-12">
-      <h2 class="text-center mb-4"> Reservation Details :
-      </h2>
-      <table class="table table-bordered">
-        <tr>
-          <th>Reservation Id</th>
-          <td>{{reservation.id}}</td>
-        </tr>
-        <tr>
-          <th>Guest</th>
-          <td>{{reservation.guest.full_name}}</td>
-        </tr>
-        <tr>
-          <th>Phone Number</th>
-          <td>{{reservation.guest.phone_number}}</td>
-        </tr>
-        <tr>
-          <th>Book Date</th>
-          <td>{{reservation.book_date}}</td>
-        </tr>
-        <tr>
-          <th>Check In</th>
-          <td>{{reservation.check_in_date}}</td>
-        </tr>
-        <tr>
-          <th>Check Out</th>
-          <td>{{reservation.check_out_date}}</td>
-        </tr>
-        <tr>
-          <th>Status</th>
-          <td>{{reservation.status}}</td>
-        </tr>
-
-      </table>
-
-    </div>
-
-
-
-
-
-
-
-
 </div>
+{% endblock %}

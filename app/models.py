@@ -74,6 +74,9 @@ class AuthUserUserPermissions(models.Model):
 
 class Bill(models.Model):
     reservation = models.ForeignKey('Reservation', models.DO_NOTHING)
+    deposit_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    early_checkin_fee = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    late_checkout_fee = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     date_issued = models.DateTimeField()
     paid_status = models.CharField(max_length=10)
@@ -194,24 +197,15 @@ class Image(models.Model):
     class Meta:
         managed = False
         db_table = 'image'
-
-
-class Payment(models.Model):
-    bill = models.ForeignKey(Bill, models.DO_NOTHING)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_date = models.DateTimeField()
-    payment_method = models.CharField(max_length=50)
-    transaction_id = models.CharField(max_length=100, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'payment'
+        
 
 class Reservation(models.Model):
     guest = models.ForeignKey(Guest, models.DO_NOTHING)
     book_date = models.DateTimeField(blank=True, null=True)
     check_in_date = models.DateField()
     check_out_date = models.DateField()
+    check_in_time = models.TimeField(blank=True, null=True)
+    check_out_time = models.TimeField(blank=True, null=True)
     deposit_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     status = models.CharField(max_length=20)
 
