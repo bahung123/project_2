@@ -29,10 +29,8 @@
                     <button type="submit" class="btn btn-primary">Search</button>
                 </form>
             </div>
-            <!-- Replace the status filter section -->
             <div class="col-md-4">
                 <form method="GET" action="{% url 'reservation_list' %}" id="statusForm">
-                    <!-- Preserve search parameter if exists -->
                     {% if search_query %}
                         <input type="hidden" name="search" value="{{ search_query }}">
                     {% endif %}
@@ -84,8 +82,20 @@
                             {% endfor %}
                         </td>
                         <td>{{ reservation.book_date }}</td>
-                        <td>{{ reservation.check_in_date }}</td>
-                        <td>{{ reservation.check_out_date }}</td>
+                        <td>{{ reservation.check_in_date }}
+                            {% if reservation.check_in_time %}
+                                <small>{{ reservation.check_in_time|date:'H:i' }}</small>
+                            {% else %}
+                                <small>No time provided</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ reservation.check_out_date }}
+                            {% if reservation.check_out_time %}
+                                <small>{{ reservation.check_out_time|date:'H:i' }}</small>
+                            {% else %}
+                                <small>No time provided</small>
+                            {% endif %}
+                        </td>
                         <td>${{ reservation.deposit_amount }}</td>
                         <td>
                             <span class="badge bg-{% if reservation.status == 'confirmed' %}success{% elif reservation.status == 'pending' %}warning{% elif reservation.status == 'checked_in' %}primary{% elif reservation.status == 'checked_out' %}info{% else %}danger{% endif %}">
@@ -113,15 +123,38 @@
                                         <form method="POST" action="{% url 'reservation_edit' reservation.id %}">
                                             {% csrf_token %}
                                             <div class="modal-body">
+                                                <!-- Status Selection -->
                                                 <div class="mb-3">
-                                                    <label>Status</label>
+                                                    <label class="form-label">Status</label>
                                                     <select name="status" class="form-select">
-                                                        <option value="pending" {% if reservation.status == 'pending' %}selected{% endif %}>Pending</option>
-                                                        <option value="confirmed" {% if reservation.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
-                                                        <option value="checked_in" {% if reservation.status == 'checked_in' %}selected{% endif %}>Checked In</option>
-                                                        <option value="checked_out" {% if reservation.status == 'checked_out' %}selected{% endif %}>Checked Out</option>
-                                                        <option value="cancelled" {% if reservation.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                                        {% for value, label in status_choices %}
+                                                            <option value="{{ value }}" {% if reservation.status == value %}selected{% endif %}>{{ label }}</option>
+                                                        {% endfor %}
                                                     </select>
+                                                </div>
+                                                
+                                                <!-- Check-in Time -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Check-in Time (24h)</label>
+                                                    <input 
+                                                        type="time" 
+                                                        name="check_in_time" 
+                                                        class="form-control" 
+                                                        value="{{ reservation.check_in_time|date:'H:i' }}"
+                                                        step="600"
+                                                    >
+                                                </div>
+                                                
+                                                <!-- Check-out Time -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Check-out Time (24h)</label>
+                                                    <input 
+                                                        type="time" 
+                                                        name="check_out_time" 
+                                                        class="form-control" 
+                                                        value="{% if reservation.check_out_time %}{{ reservation.check_out_time|time:'H:i' }}{% endif %}"
+                                                    >
+                                                    <small class="form-text text-muted">Format: HH:MM (24-hour)</small>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
@@ -161,7 +194,7 @@
             </table>
         </div>
 
-        <!-- Update pagination include path -->
+        <!-- Pagination -->
         {% if page_obj.paginator.num_pages > 1 %}
             {% include 'include/pagination.html' %}
         {% endif %}

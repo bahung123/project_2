@@ -125,7 +125,7 @@
                         <a class="nav-link {% if active == 'reservations' %}active{% endif %}" href="{% url 'reservation_list' %}">Reservations</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if active == 'payments' %}active{% endif %}" href="#">Payments</a>
+                        <a class="nav-link {% if active == 'payments' %}active{% endif %}" href="{% url 'bill_list'%}">Bills</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if active == 'feedback' %}active{% endif %}" href="#">Feedback</a>

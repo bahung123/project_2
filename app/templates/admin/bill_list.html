@@ -1,0 +1,152 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="container-fluid">
+        <!-- System Messages -->
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Title -->
+        <div class="text-center mb-5">
+            <h1 class="section-title text-primary text-uppercase">Bill List</h1>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-6">
+                <form method="GET" action="{% url 'bill_list' %}" class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search bills..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+            </div>
+            <div class="col-md-4">
+                <form method="GET" action="{% url 'bill_list' %}" id="statusForm">
+                    {% if search_query %}
+                        <input type="hidden" name="search" value="{{ search_query }}">
+                    {% endif %}
+                    <select name="paid_status" class="form-select" onchange="document.getElementById('statusForm').submit()">
+                        <option value="">All Payment Status</option>
+                        <option value="paid" {% if paid_status == 'paid' %}selected{% endif %}>Paid</option>
+                        <option value="pending" {% if paid_status == 'pending' %}selected{% endif %}>Pending</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <!-- Table content -->
+        <div class="table-responsive">
+            <table class="table table-hover" style="min-width: 1200px;">
+                <thead>
+                    <tr>
+                        <th style="width: 5%">ID</th>
+                        <th style="width: 15%">Guest</th>
+                        <th style="width: 10%">Issue Date</th>
+                        <th style="width: 10%">Deposit</th>
+                        <th style="width: 10%">Early Check-in Fee</th>
+                        <th style="width: 10%">Late Check-out Fee</th>
+                        <th style="width: 10%">Total Amount</th>
+                        <th style="width: 10%">Payment Status</th>
+                        <th style="width: 10%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in bills %}
+                    <tr>
+                        <td>{{ bill.id }}</td>
+                        <td>{{ bill.reservation.guest.full_name }}</td>
+                        <td>{{ bill.date_issued|date:"Y-m-d H:i" }}</td>
+                        <td>${{ bill.deposit_amount|default:"0.00" }}</td>
+                        <td>${{ bill.early_checkin_fee|default:"0.00" }}</td>
+                        <td>${{ bill.late_checkout_fee|default:"0.00" }}</td>
+                        <td>${{ bill.total_amount }}</td>
+                        <td>
+                            <span class="badge bg-{% if bill.paid_status == 'paid' %}success{% else %}warning{% endif %}">
+                                {{ bill.paid_status }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'bill_export' bill.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ bill.id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ bill.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+
+                            <!-- Edit Modal -->
+                            <div class="modal fade" id="editModal{{ bill.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Edit Bill</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{% url 'bill_edit' bill.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label>Payment Status</label>
+                                                    <select name="paid_status" class="form-select">
+                                                        <option value="paid" {% if bill.paid_status == 'paid' %}selected{% endif %}>Paid</option>
+                                                        <option value="pending" {% if bill.paid_status == 'pending' %}selected{% endif %}>Pending</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button type="submit" class="btn btn-primary">Save changes</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Delete Modal -->
+                            <div class="modal fade" id="deleteModal{{ bill.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Delete Bill</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete this bill?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{% url 'bill_delete' bill.id %}" method="POST">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+            {% include 'admin/includes/pagination.html' %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
