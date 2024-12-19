@@ -163,7 +163,9 @@
                 <td>
                     <a href="{% url 'guest_detail' guest.id %}?action=view" class="btn btn-primary btn-sm">View</a>
                     <a href="{% url 'guest_detail' guest.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
+                    {% if user.is_superuser %}
                     <a href="{% url 'guest_detail' guest.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

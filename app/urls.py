@@ -10,7 +10,7 @@ from .views import (
 from .view.admin import (
     dashboard, employee, guest, room_type, 
     room as admin_room, service as admin_service, 
-    base_admin, reservation, bill
+    base_admin, reservation, bill , branch
 )
 
 urlpatterns = [
@@ -55,4 +55,9 @@ urlpatterns = [
     path('base_admin/reservation/<int:reservation_id>/', reservation.reservation_detail, name='reservation_detail'),
     path('base_admin/reservation/<int:reservation_id>/edit/', reservation.reservation_edit, name='reservation_edit'),
     path('base_admin/reservation/<int:reservation_id>/delete/', reservation.reservation_delete, name='reservation_delete'),
+
+    # Branch URLs
+    path('base_admin/branch/', branch.branch_list, name='branch_list'),
+    path('base_admin/branch/<int:branch_id>/', branch.branch_detail, name='branch_detail'),
+
 ]

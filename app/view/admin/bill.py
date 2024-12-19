@@ -78,20 +78,7 @@ def bill_edit(request, bill_id):
         if request.method == 'POST':
             # Update bill details
             bill.paid_status = request.POST.get('paid_status')
-            
-            # Convert all values to float for calculation
-            deposit = float(bill.deposit_amount or 0)
-            early_fee = float(request.POST.get('early_checkin_fee', 0))
-            late_fee = float(request.POST.get('late_checkout_fee', 0))
-            
-            # Set fees
-            bill.early_checkin_fee = early_fee
-            bill.late_checkout_fee = late_fee
-            
-            # Calculate total
-            bill.total_amount = deposit + early_fee + late_fee
-            
-            bill.save()
+            bill.save()            
             messages.success(request, 'Bill updated successfully.')
             
     except Exception as e:
@@ -181,7 +168,7 @@ def export_bill_pdf(request, bill_id):
 
         # Table content
         items = [
-            ("Room Charges", bill.deposit_amount),
+            ("Room Charges", bill.total_amount - bill.early_checkin_fee - bill.late_checkout_fee),
             ("Early Check-in Fee", bill.early_checkin_fee),
             ("Late Check-out Fee", bill.late_checkout_fee)
         ]
@@ -206,6 +193,22 @@ def export_bill_pdf(request, bill_id):
         p.drawString(60, y, "Total Amount:")
         p.setFillColor(HexColor('#C5A572'))
         p.drawRightString(width-60, y, f"${bill.total_amount:.2f}")
+
+        # deposit amount
+        y -= 30
+        p.setFont("Helvetica", 12)
+        p.setFillColor(HexColor('#0A1747'))
+        p.drawString(60, y, "Deposit Amount:")
+        p.setFillColor(HexColor('#C5A572'))
+        p.drawRightString(width-60, y, f"${bill.deposit_amount:.2f}")
+
+        #Payment required
+        y -= 30
+        p.setFont("Helvetica-Bold", 12)
+        p.setFillColor(HexColor('#0A1747'))
+        p.drawString(60, y, "Payment Required:")
+        p.setFillColor(HexColor('#C5A572'))
+        p.drawRightString(width-60, y, f"${bill.total_amount-bill.deposit_amount:.2f}")
 
         # Footer with QR and thank you note
         p.setFillColor(HexColor('#0A1747'))
