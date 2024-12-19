@@ -1,0 +1,291 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if action == 'list' %}
+    <h1>Service Usage List</h1>
+    
+    <!-- Search form -->
+    <form method="GET" class="mb-3">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search by reservation ID or guest name" name="search" value="{{ search_query }}">
+            <button class="btn btn-outline-secondary" type="submit">Search</button>
+        </div>
+    </form>
+
+    <!-- Add new button -->
+    <a href="{% url 'service_usage_detail' 0 %}?action=add" class="btn btn-primary mb-3">Add New Service Usage</a>
+
+    <!-- Service usage table -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Guest Name</th>
+                <th>Reservation ID</th>
+                <th>Room</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usage in service_usages %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ usage.reservation.guest.full_name }}</td>
+                <td>{{ usage.reservation.id }}</td>
+                <td>{{ usage.room_id }}</td>
+                <td>
+                    <a href="{% url 'service_usage_detail' usage.id %}?action=view" class="btn btn-primary btn-sm">View</a>
+                    <form method="POST" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="usage_id" value="{{ usage.id }}">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete all services for this reservation?')">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include 'include/pagination.html' %}
+    {% endif %}
+
+    {% if action == 'view' %}
+    <!-- Chi tiết service usage -->
+    <h1>Service Usage Details</h1>
+    <table class="table mt-3">
+        <tr>
+            <th>Guest Name</th>
+            <td>{{ service_usage.reservation.guest.full_name }}</td>
+        </tr>
+        <tr>
+            <th>Phone Number</th>
+            <td>{{ service_usage.reservation.guest.phone_number }}</td>
+        </tr>
+        <tr>
+            <th>Reservation ID</th>
+            <td>{{ service_usage.reservation.id }}</td>
+        </tr>
+        <tr>
+            <th>Room Number</th>
+            <td>
+                {% for room in reservation_rooms %}
+                    {{ room.room.room_number }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </td>
+        </tr>
+    </table>
+
+    <h3 class="mt-4">Service Details</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Service Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Date Used</th>
+                <th>Total</th>
+                <th>Actions</th> 
+            </tr>
+        </thead>
+        <tbody>
+            {% for usage in service_usages %}
+            <tr>
+                <td>{{ usage.service.service_name }}</td>
+                <td>${{ usage.service.price }}</td>
+                <td>{{ usage.quantity }}</td>
+                <td>{{ usage.date_used }}</td>
+                <td>${{ usage.total }}</td>
+                <td>
+                    <a href="{% url 'service_usage_detail' usage.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'service_usage_detail' usage.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+            <tr class="table-dark">
+                <td colspan="5" class="text-end"><strong>Grand Total:</strong></td>
+                <td><strong>${{ total_amount }}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Add Service Button -->
+    <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+        Add Service
+    </button>
+
+    <!-- Add Service Modal -->
+    <div class="modal fade" id="addServiceModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Service</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="reservation" value="{{ service_usage.reservation.id }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="service" class="form-label">Service Name</label>
+                            <select id="service" name="service" class="form-control" required onchange="updatePrice()">
+                                <option value="">Select Service</option>
+                                {% for service in services %}
+                                <option value="{{ service.id }}" data-price="{{ service.price }}">
+                                    {{ service.service_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" id="quantity" name="quantity" class="form-control" required min="1" onchange="calculateTotal()">
+                        </div>
+                        <div class="mb-3">
+                            <label for="date_used" class="form-label">Date Used</label>
+                            <input type="date" id="date_used" name="date_used" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add Service</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updatePrice() {
+            const serviceSelect = document.getElementById('service');
+            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            const serviceSelect = document.getElementById('service');
+            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+            const price = selectedOption.getAttribute('data-price');
+            const quantity = document.getElementById('quantity').value;
+            document.getElementById('total').value = price * quantity;
+        }
+    </script>
+
+    {% elif action == 'edit' %}
+    <!-- Chỉnh sửa service usage -->
+    <h1>Edit Service Usage</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="reservation" class="form-label">Reservation</label>
+            <select id="reservation" name="reservation" class="form-control" required>
+                {% for reservation in reservations %}
+                <option value="{{ reservation.id }}" {% if reservation.id == service_usage.reservation.id %}selected{% endif %}>
+                    Reservation #{{ reservation.id }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="room" class="form-label">Room</label>
+            <select id="room" name="room" class="form-control" required>
+                <option value="">Select Room</option>
+                {% for room in rooms %}
+                <option value="{{ room.id }}" {% if room.id == service_usage.room_id %}selected{% endif %}>
+                    {{ room.room_number }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="service" class="form-label">Service</label>
+            <select id="service" name="service" class="form-control" required>
+                {% for service in services %}
+                <option value="{{ service.id }}" {% if service.id == service_usage.service.id %}selected{% endif %}>
+                    {{ service.service_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="quantity" class="form-label">Quantity</label>
+            <input type="number" id="quantity" name="quantity" class="form-control" value="{{ service_usage.quantity }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="date_used" class="form-label">Date Used</label>
+            <input type="date" id="date_used" name="date_used" class="form-control" value="{{ service_usage.date_used|date:'Y-m-d' }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="total" class="form-label">Total</label>
+            <input type="number" id="total" name="total" class="form-control" value="{{ service_usage.total }}" readonly>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+
+    {% elif action == 'delete' %}
+    <!-- Delete Confirmation -->
+    <div class="container mt-4">
+        <h1>Delete Service Usage</h1>
+        <p>Are you sure you want to delete this service usage?</p>
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a href="{% url 'service_usage_detail' service_usage.id %}?action=view" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+
+    {% elif action == 'add' %}
+    <div class="container mt-4">
+        <h1>Add Service Usage</h1>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="reservation" class="form-label">Reservation</label>
+                <select id="reservation" name="reservation" class="form-control" required>
+                    <option value="">Select Reservation</option>
+                    {% for res in available_reservations %}
+                    <option value="{{ res.id }}">
+                        #{{ res.id }} - {{ res.guest.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="service" class="form-label">Service</label>
+                <select id="service" name="service" class="form-control" required onchange="updatePrice()">
+                    <option value="">Select Service</option>
+                    {% for service in services %}
+                    <option value="{{ service.id }}" data-price="{{ service.price }}">
+                        {{ service.service_name }} - ${{ service.price }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="quantity" class="form-label">Quantity</label>
+                <input type="number" id="quantity" name="quantity" class="form-control" required min="1">
+            </div>
+            <div class="mb-3">
+                <label for="date_used" class="form-label">Date Used</label>
+                <input type="date" id="date_used" name="date_used" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Service Usage</button>
+            <a href="{% url 'service_usage_list' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Pagination -->
+{% include 'include/pagination.html' %}
+{% endblock %}

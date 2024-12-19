@@ -261,9 +261,11 @@ class Service(models.Model):
 
 class ServiceUsage(models.Model):
     reservation = models.ForeignKey(Reservation, models.DO_NOTHING)
+    room_id = models.IntegerField(blank=True, null=True)
     service = models.ForeignKey(Service, models.DO_NOTHING, blank=True, null=True)
     quantity = models.IntegerField()
     date_used = models.DateField()
+    total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     class Meta:
         managed = False

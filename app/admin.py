@@ -75,7 +75,7 @@ class ServiceAdmin(admin.ModelAdmin):
     list_display = ('service_name', 'price', 'description')
 
 class ServiceUsageAdmin(admin.ModelAdmin):
-    list_display = ('reservation', 'service', 'quantity', 'date_used')
+    list_display = ('reservation', 'room_id', 'service', 'quantity', 'date_used','total')
 class ReservationRoomAdmin(admin.ModelAdmin):
     list_display = ('reservation', 'room')
 
