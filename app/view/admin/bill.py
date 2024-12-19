@@ -1,9 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Sum, F
 from django.contrib import messages
-from app.models import Bill
+from app.models import Bill, ServiceUsage
 from datetime import datetime
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
@@ -17,6 +17,7 @@ from reportlab.platypus import Paragraph
 from reportlab.lib.colors import HexColor
 import qrcode
 from io import BytesIO
+from django.db.models import Sum
 
 # Add QR code import with try-except
 try:
@@ -28,48 +29,39 @@ except ImportError:
 
 @login_required
 def bill_list(request):
-    try:
-        # Get search and filter parameters
-        search_query = request.GET.get('search', '').strip()
-        paid_status = request.GET.get('paid_status', '').strip()
+    search_query = request.GET.get('search', '')
+    
+    # Annotate bills with service usage totals
+    bills = Bill.objects.annotate(
+        service_total=Sum('reservation__serviceusage__total')
+    ).select_related(
+        'reservation__guest'
+    )
 
-        # Base queryset with newest bills first
-        bills = Bill.objects.all().order_by('-date_issued', '-id')
-
-        # Apply search filter
-        if search_query:
-            bills = bills.filter(
-                Q(reservation__guest__full_name__icontains=search_query) |
-                Q(reservation__guest__email__icontains=search_query) |
-                Q(reservation__guest__phone_number__icontains=search_query)
-            ).distinct()
-
-        # Apply status filter
-        if paid_status:
-            bills = bills.filter(paid_status=paid_status)
-
-        # Pagination
-        page_size = 10
-        paginator = Paginator(bills, page_size)
-        page_number = request.GET.get('page', 1)
-        page_obj = paginator.get_page(page_number)
-
-        context = {
-            'bills': page_obj,
-            'page_obj': page_obj,
-            'search_query': search_query,
-            'paid_status': paid_status,
-            'active': 'bills',
-            'total_bills': Bill.objects.count(),
-            'filtered_count': bills.count(),
-            'title': 'Bill List'
-        }
-
-        return render(request, 'admin/bill_list.html', context)
-
-    except Exception as e:
-        messages.error(request, f'Error loading bills: {str(e)}')
-        return render(request, 'admin/bill_list.html', {'active': 'bills'})
+    if search_query:
+        bills = bills.filter(
+            Q(reservation__guest__full_name__icontains=search_query) |
+            Q(reservation__id__icontains=search_query)
+        )
+    
+    # Get service usage totals for each reservation
+    for bill in bills:
+        bill.service_total = ServiceUsage.objects.filter(
+            reservation=bill.reservation
+        ).aggregate(
+            total=Sum('total')
+        )['total'] or 0
+    
+    paginator = Paginator(bills, 10)
+    page = request.GET.get('page')
+    bills = paginator.get_page(page)
+    
+    context = {
+        'bills': bills,
+        'search_query': search_query,
+        'active': 'bills'
+    }
+    return render(request, 'admin/bill_list.html', context)
 
 @login_required
 def bill_edit(request, bill_id):
@@ -104,6 +96,17 @@ def bill_delete(request, bill_id):
 def export_bill_pdf(request, bill_id):
     try:
         bill = get_object_or_404(Bill, id=bill_id)
+        
+        # Calculate service total
+        service_total = ServiceUsage.objects.filter(
+            reservation=bill.reservation
+        ).aggregate(
+            total=Sum('total')
+        )['total'] or 0
+        
+        # Calculate room charges
+        room_charges = bill.total_amount - bill.early_checkin_fee - bill.late_checkout_fee - service_total
+        
         width, height = A4
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="luxury_invoice_{bill.id}.pdf"'
@@ -168,9 +171,10 @@ def export_bill_pdf(request, bill_id):
 
         # Table content
         items = [
-            ("Room Charges", bill.total_amount - bill.early_checkin_fee - bill.late_checkout_fee),
+            ("Room Charges", room_charges),
             ("Early Check-in Fee", bill.early_checkin_fee),
-            ("Late Check-out Fee", bill.late_checkout_fee)
+            ("Late Check-out Fee", bill.late_checkout_fee),
+            ("Service Charges", service_total)
         ]
 
         for i, (desc, amount) in enumerate(items):

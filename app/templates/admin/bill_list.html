@@ -54,6 +54,7 @@
                         <th style="width: 10%">Deposit</th>
                         <th style="width: 10%">Early Check-in Fee</th>
                         <th style="width: 10%">Late Check-out Fee</th>
+                        <th style="wihth: 10%">Service usage</th>
                         <th style="width: 10%">Total Amount</th>
                         <th style="width: 10%">Payment Status</th>
                         <th style="width: 10%">Actions</th>
@@ -68,6 +69,7 @@
                         <td>${{ bill.deposit_amount|default:"0.00" }}</td>
                         <td>${{ bill.early_checkin_fee|default:"0.00" }}</td>
                         <td>${{ bill.late_checkout_fee|default:"0.00" }}</td>
+                        <td>${{ bill.service_total|floatformat:2 }}</td>
                         <td>${{ bill.total_amount }}</td>
                         <td>
                             <span class="badge bg-{% if bill.paid_status == 'paid' %}success{% else %}warning{% endif %}">

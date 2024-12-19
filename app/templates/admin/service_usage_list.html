@@ -18,7 +18,7 @@
     <!-- Search form -->
     <form method="GET" class="mb-3">
         <div class="input-group">
-            <input type="text" class="form-control" placeholder="Search by reservation ID or guest name" name="search" value="{{ search_query }}">
+            <input type="text" class="form-control" placeholder="Search by reservation ID , guest name or phone number" name="search" value="{{ search_query }}">
             <button class="btn btn-outline-secondary" type="submit">Search</button>
         </div>
     </form>
@@ -32,8 +32,8 @@
             <tr>
                 <th>#</th>
                 <th>Guest Name</th>
+                <th>Phone number</th>
                 <th>Reservation ID</th>
-                <th>Room</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -42,8 +42,8 @@
             <tr>
                 <td>{{ forloop.counter }}</td>
                 <td>{{ usage.reservation.guest.full_name }}</td>
+                <td>{{ usage.reservation.guest.phone_number }}</td>
                 <td>{{ usage.reservation.id }}</td>
-                <td>{{ usage.room_id }}</td>
                 <td>
                     <a href="{% url 'service_usage_detail' usage.id %}?action=view" class="btn btn-primary btn-sm">View</a>
                     <form method="POST" style="display: inline;">
@@ -119,10 +119,12 @@
         </tbody>
     </table>
 
+    {% if can_add_service %}
     <!-- Add Service Button -->
     <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addServiceModal">
         Add Service
     </button>
+    {% endif %}
 
     <!-- Add Service Modal -->
     <div class="modal fade" id="addServiceModal">
