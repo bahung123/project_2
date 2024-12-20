@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.utils.timezone import now
 from app.models import Reservation, Bill, ServiceUsage
 from datetime import datetime, time
+from decimal import Decimal
 
 # Define fee rules as constants
 CHECK_IN_RULES = {
@@ -168,25 +169,24 @@ def calculate_fee(actual_time, base_date, rules, room_price):
 
 def calculate_total_amount(reservation):
     try:
-        # Room charges
-        rooms = reservation.reservationroom_set.all()
-        room_price = float(sum(room.room.room_type.base_price for room in rooms))  # Convert to float
-        total_days = (reservation.check_out_date - reservation.check_in_date).days
-        room_total = room_price * total_days
+        # Calculate room total using Decimal
+        room_total = Decimal('0')
+        for room in reservation.reservationroom_set.all():
+            days = (reservation.check_out_date - reservation.check_in_date).days
+            room_total += Decimal(str(room.room.room_type.base_price)) * Decimal(str(days))
 
-        # Early check-in/late check-out fees
-        early_checkin_fee = late_checkout_fee = 0
-        if reservation.check_in_time and reservation.check_out_time:
-            actual_check_in = datetime.combine(reservation.check_in_date, reservation.check_in_time)
-            actual_check_out = datetime.combine(reservation.check_out_date, reservation.check_out_time)
-            early_checkin_fee = calculate_fee(actual_check_in, reservation.check_in_date, CHECK_IN_RULES, room_price)
-            late_checkout_fee = calculate_fee(actual_check_out, reservation.check_out_date, CHECK_OUT_RULES, room_price)
+        # Convert fees to Decimal with safe defaults
+        early_checkin_fee = Decimal(str(getattr(reservation, 'early_checkin_fee', '0') or '0'))
+        late_checkout_fee = Decimal(str(getattr(reservation, 'late_checkout_fee', '0') or '0'))
 
-        # Service charges
-        service_charges = float(ServiceUsage.objects.filter(reservation=reservation).aggregate(
-            total=Sum(F('quantity') * F('service__price'))
-        )['total'] or 0)
+        # Calculate service charges using Decimal
+        service_charges = ServiceUsage.objects.filter(
+            reservation=reservation
+        ).aggregate(
+            total=Sum('total')
+        )['total'] or Decimal('0')
 
+        # Calculate total amount with Decimal
         total_amount = room_total + early_checkin_fee + late_checkout_fee + service_charges
 
         return {
@@ -195,7 +195,7 @@ def calculate_total_amount(reservation):
             'late_checkout_fee': late_checkout_fee,
             'service_charges': service_charges,
             'total_amount': total_amount,
-            'deposit_amount': float(reservation.deposit_amount or 0)
+            'deposit_amount': Decimal(str(getattr(reservation, 'deposit_amount', '0') or '0'))
         }
     except Exception as e:
         print(f"Error calculating bill: {str(e)}")

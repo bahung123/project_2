@@ -107,10 +107,51 @@
                 <td>{{ usage.date_used }}</td>
                 <td>${{ usage.total }}</td>
                 <td>
-                    <a href="{% url 'service_usage_detail' usage.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
-                    <a href="{% url 'service_usage_detail' usage.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
+                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editServiceModal{{ usage.id }}">
+                        Edit
+                    </button>
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this service?')">Delete</button>
+                    </form>
                 </td>
             </tr>
+            <!-- Edit Service Modal -->
+            <div class="modal fade" id="editServiceModal{{ usage.id }}">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Service</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="edit">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="service{{ usage.id }}" class="form-label">Service Name</label>
+                                    <select id="service{{ usage.id }}" name="service" class="form-control" required>
+                                        {% for service in services %}
+                                        <option value="{{ service.id }}" {% if service.id == usage.service.id %}selected{% endif %}>
+                                            {{ service.service_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="quantity{{ usage.id }}" class="form-label">Quantity</label>
+                                    <input type="number" id="quantity{{ usage.id }}" name="quantity" class="form-control" value="{{ usage.quantity }}" required min="1">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
             {% endfor %}
             <tr class="table-dark">
                 <td colspan="5" class="text-end"><strong>Grand Total:</strong></td>
@@ -189,27 +230,6 @@
     <form method="POST">
         {% csrf_token %}
         <div class="mb-3">
-            <label for="reservation" class="form-label">Reservation</label>
-            <select id="reservation" name="reservation" class="form-control" required>
-                {% for reservation in reservations %}
-                <option value="{{ reservation.id }}" {% if reservation.id == service_usage.reservation.id %}selected{% endif %}>
-                    Reservation #{{ reservation.id }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="mb-3">
-            <label for="room" class="form-label">Room</label>
-            <select id="room" name="room" class="form-control" required>
-                <option value="">Select Room</option>
-                {% for room in rooms %}
-                <option value="{{ room.id }}" {% if room.id == service_usage.room_id %}selected{% endif %}>
-                    {{ room.room_number }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="mb-3">
             <label for="service" class="form-label">Service</label>
             <select id="service" name="service" class="form-control" required>
                 {% for service in services %}
@@ -222,14 +242,6 @@
         <div class="mb-3">
             <label for="quantity" class="form-label">Quantity</label>
             <input type="number" id="quantity" name="quantity" class="form-control" value="{{ service_usage.quantity }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="date_used" class="form-label">Date Used</label>
-            <input type="date" id="date_used" name="date_used" class="form-control" value="{{ service_usage.date_used|date:'Y-m-d' }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="total" class="form-label">Total</label>
-            <input type="number" id="total" name="total" class="form-control" value="{{ service_usage.total }}" readonly>
         </div>
         <button type="submit" class="btn btn-primary">Save Changes</button>
     </form>

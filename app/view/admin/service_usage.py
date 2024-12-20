@@ -3,8 +3,10 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Max
 from django.contrib.auth.decorators import login_required
-from app.models import ServiceUsage, Reservation, Room, Service
+from app.models import ServiceUsage, Reservation, Room, Service, Bill
 from decimal import Decimal
+from .reservation import calculate_total_amount
+
 
 @login_required
 def service_usage_list(request):
@@ -17,9 +19,20 @@ def service_usage_list(request):
             service_usage = get_object_or_404(ServiceUsage, id=usage_id)
             # Check if reservation is checked in
             if service_usage.reservation.status != 'checked_in':
-                reservation_id = service_usage.reservation.id
-                # Delete all services for this reservation
+                reservation = service_usage.reservation
+                reservation_id = reservation.id
+                
+                # Delete service usage
                 ServiceUsage.objects.filter(reservation_id=reservation_id).delete()
+                
+                # Update bill total
+                bill = Bill.objects.filter(reservation=reservation).first()
+                if bill:
+                    # Recalculate amounts using imported function
+                    amounts = calculate_total_amount(reservation)
+                    bill.total_amount = amounts['total_amount']
+                    bill.save()
+                
                 messages.success(request, 'Service usage deleted successfully')
             else:
                 messages.error(request, 'Cannot delete services for checked-in reservations')
@@ -64,12 +77,11 @@ def service_usage_detail(request, usage_id):
     action = request.GET.get('action', 'view')
     
     if usage_id == 0:
-        # Get all confirmed reservations that haven't checked out
+        # Get all confirmed and checked-in reservations
         available_reservations = Reservation.objects.filter(
+            status__in=['confirmed', 'checked_in']
         ).exclude(
-            status='checked_out'  # Exclude checked out reservations
-        ).exclude(
-            id__in=ServiceUsage.objects.values_list('reservation_id', flat=True)
+            status='checked_out'
         ).select_related('guest').order_by('-id')
 
         context = {
@@ -80,69 +92,15 @@ def service_usage_detail(request, usage_id):
         
         if request.method == 'POST':
             try:
-                reservation = Reservation.objects.get(id=request.POST.get('reservation'))
-                # Get room from ReservationRoom
-                reservation_room = reservation.reservationroom_set.first()
-                if not reservation_room:
-                    raise Exception("No room assigned to this reservation")
+                reservation = get_object_or_404(Reservation, id=request.POST.get('reservation'))
                 
-                service = Service.objects.get(id=request.POST.get('service'))
-                quantity = int(request.POST.get('quantity'))
-                date_used = request.POST.get('date_used')
-                
-                # Calculate total
-                total = Decimal(str(service.price)) * Decimal(str(quantity))
-                
-                # Create new service usage
-                ServiceUsage.objects.create(
-                    reservation=reservation,
-                    room_id=reservation_room.room.id,
-                    service=service,
-                    quantity=quantity,
-                    date_used=date_used,
-                    total=total
-                )
-                messages.success(request, 'Service usage added successfully')
-                return redirect('service_usage_list')
-                
-            except Exception as e:
-                messages.error(request, f'Error: {str(e)}')
-                return render(request, 'admin/service_usage_list.html', context)
-        
-        return render(request, 'admin/service_usage_list.html', context)
-    else:
-        try:
-            service_usage = get_object_or_404(ServiceUsage, id=usage_id)
-            
-            if request.method == 'POST':
-                if action == 'delete':
-                    # Get reservation ID before deleting
-                    reservation_id = service_usage.reservation.id
-                    service_usage.delete()
-                    messages.success(request, 'Service deleted successfully')
-                    
-                    # Check if there are remaining services
-                    remaining = ServiceUsage.objects.filter(
-                        reservation_id=reservation_id
-                    ).first()
-                    
-                    if remaining:
-                        return redirect('service_usage_detail', usage_id=remaining.id)
-                    return redirect('service_usage_list')
-                # Check if reservation is checked out before allowing service addition
-                if service_usage.reservation.status == 'checked_out':
-                    messages.error(request, 'Cannot add services to checked out reservations')
-                    return redirect('service_usage_detail', usage_id=usage_id)
-                
-                try:
-                    reservation_id = request.POST.get('reservation')
-                    reservation = service_usage.reservation  # Use existing reservation
-                    
+                # Allow adding services if reservation is confirmed or checked in
+                if reservation.status in ['confirmed', 'checked_in']:
                     # Get room from ReservationRoom
                     reservation_room = reservation.reservationroom_set.first()
                     if not reservation_room:
                         raise Exception("No room assigned to this reservation")
-                        
+                    
                     service = Service.objects.get(id=request.POST.get('service'))
                     quantity = int(request.POST.get('quantity'))
                     date_used = request.POST.get('date_used')
@@ -159,32 +117,109 @@ def service_usage_detail(request, usage_id):
                         date_used=date_used,
                         total=total
                     )
-                    messages.success(request, 'Service added successfully')
-                    
-                except Exception as e:
-                    messages.error(request, f'Error: {str(e)}')
+                    messages.success(request, 'Service usage added successfully')
+                    return redirect('service_usage_list')
+                else:
+                    messages.error(request, 'Can only add services to confirmed or checked-in reservations')
+            except Exception as e:
+                messages.error(request, f'Error: {str(e)}')
+                return render(request, 'admin/service_usage_list.html', context)
+        
+        return render(request, 'admin/service_usage_list.html', context)
+    else:
+        try:
+            service_usage = get_object_or_404(ServiceUsage, id=usage_id)
             
-            # Get all services and rooms for this reservation
+            if request.method == 'POST':
+                if request.POST.get('action') == 'edit':
+                    # Get form data
+                    service = Service.objects.get(id=request.POST.get('service'))
+                    quantity = int(request.POST.get('quantity'))
+                    
+                    # Calculate new total
+                    total = Decimal(str(service.price)) * Decimal(str(quantity))
+                    
+                    # Update service usage
+                    service_usage.service = service
+                    service_usage.quantity = quantity
+                    service_usage.total = total
+                    service_usage.save()
+                    
+                    # Update bill if exists
+                    bill = Bill.objects.filter(reservation=service_usage.reservation).first()
+                    if bill:
+                        amounts = calculate_total_amount(service_usage.reservation)
+                        bill.total_amount = amounts['total_amount']
+                        bill.save()
+                    
+                    messages.success(request, 'Service updated successfully')
+                    return redirect('service_usage_detail', usage_id=service_usage.id)
+                    
+                elif request.POST.get('action') == 'delete':
+                    # Get reservation from service usage
+                    reservation = service_usage.reservation
+                    reservation_id = reservation.id
+                    
+                    # Delete service usage
+                    service_usage.delete()
+                    
+                    # Update bill total
+                    bill = Bill.objects.filter(reservation=reservation).first()
+                    if bill:
+                        # Recalculate amounts using imported function
+                        amounts = calculate_total_amount(reservation)
+                        bill.total_amount = amounts['total_amount']
+                        bill.save()
+                    
+                    messages.success(request, 'Service usage deleted successfully')
+                    return redirect('service_usage_list')
+                    
+                else:  # Add new service
+                    service = Service.objects.get(id=request.POST.get('service'))
+                    quantity = int(request.POST.get('quantity'))
+                    date_used = request.POST.get('date_used')
+                    
+                    # Calculate total
+                    total = Decimal(str(service.price)) * Decimal(str(quantity))
+                    
+                    # Create new service usage
+                    ServiceUsage.objects.create(
+                        reservation=service_usage.reservation,
+                        room_id=service_usage.room_id,
+                        service=service,
+                        quantity=quantity,
+                        date_used=date_used,
+                        total=total
+                    )
+                    
+                    # Update bill if exists
+                    bill = Bill.objects.filter(reservation=service_usage.reservation).first()
+                    if bill:
+                        amounts = calculate_total_amount(service_usage.reservation)
+                        bill.total_amount = amounts['total_amount']
+                        bill.save()
+                    
+                    messages.success(request, 'Service added successfully')
+                    return redirect('service_usage_detail', usage_id=service_usage.id)
+            
+            # Get all services for this reservation
             service_usages = ServiceUsage.objects.filter(
-                reservation_id=service_usage.reservation.id
+                reservation=service_usage.reservation
             )
             total_amount = sum(usage.total for usage in service_usages)
-            
-            # Get all rooms for this reservation
-            reservation_rooms = service_usage.reservation.reservationroom_set.all()
             
             context = {
                 'service_usage': service_usage,
                 'service_usages': service_usages,
                 'total_amount': total_amount,
-                'reservation_rooms': reservation_rooms,
                 'action': action,
                 'services': Service.objects.all(),
-                'can_add_service': service_usage.reservation.status != 'checked_out'
+                'can_add_service': service_usage.reservation.status in ['confirmed', 'checked_in'],
+                'reservation_rooms': service_usage.reservation.reservationroom_set.all()
             }
             
-        except ServiceUsage.DoesNotExist:
-            messages.error(request, 'Service usage not found')
+            return render(request, 'admin/service_usage_list.html', context)
+            
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
             return redirect('service_usage_list')
-    
-    return render(request, 'admin/service_usage_list.html', context)
