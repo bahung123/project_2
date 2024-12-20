@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from app.models import RoomType, Image, Guest, Service, Reservation, Room, ReservationRoom,Employee,Branch
+from app.models import RoomType, Image, Guest, Service, Reservation, Room, ReservationRoom,Employee,Branch ,ServiceUsage, Bill
 from django.contrib.auth.models import User
 from datetime import datetime
 from django.http import HttpResponse, JsonResponse
@@ -392,3 +392,40 @@ def search_rooms(request):
         print("An error occurred while searching for rooms:")  # In thông báo lỗi
         print(traceback.format_exc())  # In chi tiết lỗi ra console/log
         return JsonResponse({'error': f'An error occurred: {str(e)}'})
+    
+@login_required
+def booking_history(request):
+    # Get guest by user_id
+    guest = Guest.objects.get(user_id=request.user.id)
+    
+    # Get status filter
+    status = request.GET.get('status', '')
+    
+    # Get reservations
+    reservations = Reservation.objects.filter(
+        guest=guest
+    ).order_by('-book_date')
+    
+    if status:
+        reservations = reservations.filter(status=status)
+    
+    # Get related data
+    for reservation in reservations:
+        reservation.rooms = ReservationRoom.objects.filter(
+            reservation=reservation
+        ).select_related('room', 'room__room_type')
+        
+        reservation.bill = Bill.objects.filter(
+            reservation=reservation
+        ).first()
+        
+        reservation.services = ServiceUsage.objects.filter(
+            reservation=reservation
+        ).select_related('service')
+    
+    context = {
+        'reservations': reservations,
+        'status_filter': status
+    }
+    
+    return render(request, 'user/booking_history.html', context)

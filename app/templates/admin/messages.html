@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: 450px;
+            display: flex;
+            flex-direction: column;
+            font-size: 13px;
+        }
+        .chat-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e4e6eb;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+        }
+        .chat-header .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: #e4e6eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-header .avatar i {
+            font-size: 16px;
+            color: #65676b;
+        }
+        .online-status {
+            font-size: 11px;
+            color: #65676b;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 12px;
+            background-color: #ffffff;
+        }
+        .message {
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .message.sent {
+            flex-direction: row-reverse;
+        }
+        .message .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin: 0 4px;
+            background: #e4e6eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .message .avatar i {
+            font-size: 14px;
+            color: #65676b;
+        }
+        .message-bubble {
+            padding: 8px 12px;
+            border-radius: 18px;
+            max-width: 60%;
+            word-wrap: break-word;
+        }
+        .message.received .message-bubble {
+            background-color: #e4e6eb;
+            margin-left: 4px;
+        }
+        .message.sent .message-bubble {
+            background-color: #0084ff;
+            color: white;
+            margin-right: 4px;
+        }
+        .message-time {
+            font-size: 10px;
+            color: #65676b;
+            margin: 2px 8px;
+        }
+        .chat-input {
+            padding: 8px 12px;
+            background-color: #ffffff;
+            border-top: 1px solid #e4e6eb;
+        }
+        .input-group {
+            background-color: #f0f2f5;
+            border-radius: 20px;
+            padding: 4px;
+        }
+        .form-control {
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            padding: 8px;
+        }
+        .form-control:focus {
+            box-shadow: none;
+            background: transparent;
+        }
+        .btn-send {
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            background-color: #0084ff;
+            color: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div>
+                <h6 class="mb-0" style="font-size: 13px;">Hotel Support</h6>
+                <div class="online-status">
+                    <span class="text-success">●</span> Active now
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            {% for message in messages %}
+            <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+                <div class="avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="message-bubble">
+                    {{ message.text }}
+                </div>
+                <div class="message-time">
+                    {{ message.timestamp|date:"g:i A" }}
+                </div>
+            </div>
+            {% endfor %}
+            <div class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <div class="chat-input">
+            <form method="POST" id="messageForm">
+                {% csrf_token %}
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Aa" name="message" autocomplete="off">
+                    <button type="submit" class="btn btn-send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            $('#messageForm').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var messageInput = form.find('input[name="message"]');
+                var message = messageInput.val();
+
+                if (message.trim()) {
+                    $.ajax({
+                        type: 'POST',
+                        url: '{% url "messenger" %}',
+                        data: form.serialize(),
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val()
+                        },
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                var newMessage = `
+                                    <div class="message sent">
+                                        <div class="message-bubble">
+                                            ${response.message.content}
+                                        </div>
+                                        <div class="message-time">
+                                            ${response.message.timestamp}
+                                        </div>
+                                    </div>
+                                `;
+                                $('#chatMessages').append(newMessage);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            }
+                        }
+                    });
+                    messageInput.val('');
+                }
+            });
+
+            // Auto refresh messages every 3 seconds
+            function refreshMessages() {
+                $.ajax({
+                    url: '{% url "messenger" %}',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        var messages = '';
+                        response.messages.forEach(function(msg) {
+                            messages += `
+                                <div class="message ${msg.sender_id == {{ user.id }} ? 'sent' : 'received'}">
+                                    <div class="message-bubble">
+                                        ${msg.text}
+                                    </div>
+                                    <div class="message-time">
+                                        ${msg.timestamp}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        $('#chatMessages').html(messages);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                });
+            }
+
+            setInterval(refreshMessages, 3000);
+        });
+    </script>
+</body>
+</html>

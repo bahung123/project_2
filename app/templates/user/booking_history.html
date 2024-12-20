@@ -1,0 +1,76 @@
+{% extends "user/index.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="container">
+        <h1 class="text-center mb-5">Booking History</h1>
+
+        <!-- Filter -->
+        <div class="mb-4">
+            <form method="GET" class="form-inline justify-content-end">
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                    <option value="checked_in" {% if status_filter == 'checked_in' %}selected{% endif %}>Checked In</option>
+                    <option value="checked_out" {% if status_filter == 'checked_out' %}selected{% endif %}>Checked Out</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </form>
+        </div>
+
+        <!-- Bookings -->
+        {% for reservation in reservations %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Booking #{{ reservation.id }}</h5>
+                <span class="badge bg-{% if reservation.status == 'confirmed' %}primary{% elif reservation.status == 'checked_in' %}success{% elif reservation.status == 'checked_out' %}secondary{% else %}danger{% endif %}">
+                    {{ reservation.status|title }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Booking Details</h6>
+                        <p><strong>Book Date:</strong> {{ reservation.book_date|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Check-in:</strong> {{ reservation.check_in_date|date:"d/m/Y" }}</p>
+                        <p><strong>Check-out:</strong> {{ reservation.check_out_date|date:"d/m/Y" }}</p>
+                        
+                        <h6 class="mt-3">Rooms</h6>
+                        {% for room in reservation.rooms %}
+                        <p>{{ room.room.room_type.name }} - Room {{ room.room.room_number }}</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Payment Details</h6>
+                        {% if reservation.bill %}
+                        <p><strong>Total Amount:</strong> ${{ reservation.bill.total_amount }}</p>
+                        <p><strong>Deposit Paid:</strong> ${{ reservation.bill.deposit_amount|default:"0.00" }}</p>
+                        <p><strong>Payment Status:</strong> 
+                            <span class="badge bg-{% if reservation.bill.paid_status == 'paid' %}success{% else %}warning{% endif %}">
+                                {{ reservation.bill.paid_status|title }}
+                            </span>
+                        </p>
+                        {% else %}
+                        <p>No bill generated yet</p>
+                        {% endif %}
+
+                        {% if reservation.services %}
+                        <h6 class="mt-3">Services Used</h6>
+                        <ul>
+                            {% for usage in reservation.services %}
+                            <li>{{ usage.service.service_name }} x{{ usage.quantity }} - ${{ usage.total }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="alert alert-info">No bookings found.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

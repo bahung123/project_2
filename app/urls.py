@@ -5,12 +5,12 @@ from .views import (
     room_detail, booking, about, contact, 
     service as user_service, logout_view, 
     account_info, update_account_info, 
-    change_password, search_rooms
+    change_password, search_rooms, booking_history
 )
 from .view.admin import (
     dashboard, employee, guest, room_type, 
     room as admin_room, service as admin_service, 
-    base_admin, reservation, bill , branch, service_usage
+    base_admin, reservation, bill , branch, service_usage , messages
 )
 
 urlpatterns = [
@@ -29,6 +29,9 @@ urlpatterns = [
     path('update_account_info/', update_account_info, name='update_account_info'),
     path('change_password/', change_password, name='change_password'),
     path('search-rooms/', search_rooms, name='search_rooms'),
+    path('booking-history/', booking_history, name='booking_history'),
+    
+    path('base_admin/messenger/', messages.messenger, name='messenger'),  # Move from bottom to user URLs section
 
     # Admin URLs
     path('base_admin/', base_admin.base_admin, name='base_admin'),
