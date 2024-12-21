@@ -5,12 +5,12 @@ from .views import (
     room_detail, booking, about, contact, 
     service as user_service, logout_view, 
     account_info, update_account_info, 
-    change_password, search_rooms, booking_history
+    change_password, search_rooms, booking_history , feedback_view
 )
 from .view.admin import (
     dashboard, employee, guest, room_type, 
     room as admin_room, service as admin_service, 
-    base_admin, reservation, bill , branch, service_usage 
+    base_admin, reservation, bill , branch, service_usage , feedback
 )
 
 urlpatterns = [
@@ -64,5 +64,9 @@ urlpatterns = [
     # Service Usage URLs
     path('base_admin/service_usage/', service_usage.service_usage_list, name='service_usage_list'),
     path('base_admin/service_usage/<int:usage_id>/', service_usage.service_usage_detail, name='service_usage_detail'),
+
+    #feedback
+    path('feedback/<int:reservation_id>/', feedback_view, name='feedback'),
+    path('base_admin/feedbacks/', feedback.feedback_list, name='admin_feedback_list'),
 
 ]

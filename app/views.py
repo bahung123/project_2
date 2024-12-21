@@ -1,8 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from app.models import RoomType, Image, Guest, Service, Reservation, Room, ReservationRoom,Employee,Branch ,ServiceUsage, Bill
+from app.models import RoomType, Image, Guest, Service, Reservation, Room, ReservationRoom,Employee,Branch ,ServiceUsage, Bill, Feedback
 from django.contrib.auth.models import User
 from datetime import datetime
 from django.http import HttpResponse, JsonResponse
@@ -395,37 +395,102 @@ def search_rooms(request):
     
 @login_required
 def booking_history(request):
-    # Get guest by user_id
-    guest = Guest.objects.get(user_id=request.user.id)
-    
-    # Get status filter
-    status = request.GET.get('status', '')
-    
-    # Get reservations
-    reservations = Reservation.objects.filter(
-        guest=guest
-    ).order_by('-book_date')
-    
-    if status:
-        reservations = reservations.filter(status=status)
-    
-    # Get related data
-    for reservation in reservations:
-        reservation.rooms = ReservationRoom.objects.filter(
-            reservation=reservation
-        ).select_related('room', 'room__room_type')
+    try:
+        # Get guest by user_id
+        guest = Guest.objects.get(user_id=request.user.id)
         
-        reservation.bill = Bill.objects.filter(
-            reservation=reservation
-        ).first()
+        # Get status filter
+        status = request.GET.get('status', '')
         
-        reservation.services = ServiceUsage.objects.filter(
-            reservation=reservation
-        ).select_related('service')
-    
-    context = {
-        'reservations': reservations,
-        'status_filter': status
-    }
-    
-    return render(request, 'user/booking_history.html', context)
+        # Get reservations
+        reservations = Reservation.objects.filter(
+            guest=guest
+        ).order_by('-book_date')
+        
+        if status:
+            reservations = reservations.filter(status=status)
+        
+        # Get related data
+        for reservation in reservations:
+            reservation.rooms = ReservationRoom.objects.filter(
+                reservation=reservation
+            ).select_related('room', 'room__room_type')
+            
+            reservation.bill = Bill.objects.filter(
+                reservation=reservation
+            ).first()
+            
+            reservation.services = ServiceUsage.objects.filter(
+                reservation=reservation
+            ).select_related('service')
+
+            # Check if feedback exists
+            reservation.has_feedback = Feedback.objects.filter(
+                reservation=reservation
+            ).exists()
+        
+        context = {
+            'reservations': reservations,
+            'status_filter': status
+        }
+        
+        return render(request, 'user/booking_history.html', context)
+
+    except Exception as e:
+        print(f"Booking history error: {str(e)}")
+        messages.error(request, "Error loading booking history")
+        return redirect('index')
+
+@login_required 
+def feedback_view(request, reservation_id):
+    try:
+        guest = Guest.objects.get(user_id=request.user.id)
+        
+        reservation = get_object_or_404(
+            Reservation.objects.select_related('guest'), 
+            id=reservation_id,
+            guest=guest,
+            status='checked_out'
+        )
+
+        # Get existing feedback if any
+        feedback = Feedback.objects.filter(reservation=reservation).first()
+
+        if request.method == 'POST':
+            rating = request.POST.get('rating')
+            comment = request.POST.get('comment')
+
+            if not rating or not comment:
+                messages.error(request, 'Please provide both rating and comment')
+                return render(request, 'user/feedback.html', {
+                    'reservation': reservation,
+                    'feedback': feedback
+                })
+
+            if feedback:
+                # Update existing feedback
+                feedback.rating = rating
+                feedback.comment = comment
+                feedback.save()
+                messages.success(request, 'Feedback updated successfully!')
+            else:
+                # Create new feedback
+                Feedback.objects.create(
+                    guest=guest,
+                    reservation=reservation,
+                    rating=rating,
+                    comment=comment
+                )
+                messages.success(request, 'Thank you for your feedback!')
+
+            return redirect('booking_history')
+
+        return render(request, 'user/feedback.html', {
+            'reservation': reservation,
+            'feedback': feedback
+        })
+
+    except Exception as e:
+        print(f"Feedback error: {str(e)}")
+        messages.error(request, 'Unable to process feedback')
+        return redirect('booking_history')

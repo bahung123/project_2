@@ -2,6 +2,16 @@
 {% load static %}
 
 {% block content %}
+{% if messages %}
+<div class="mb-4">
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
 <div class="container-fluid py-5">
     <div class="container">
         <h1 class="text-center mb-5">Booking History</h1>
@@ -63,6 +73,24 @@
                             <li>{{ usage.service.service_name }} x{{ usage.quantity }} - ${{ usage.total }}</li>
                             {% endfor %}
                         </ul>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        {% if reservation.status == 'checked_out' %}
+                            {% if reservation.has_feedback %}
+                                <div class="mt-3">
+                                    <a href="{% url 'feedback' reservation.id %}" class="btn btn-warning">
+                                        <i class="fas fa-edit"></i> Edit Feedback
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="mt-3">
+                                    <a href="{% url 'feedback' reservation.id %}" class="btn btn-primary">
+                                        <i class="fas fa-comment"></i> Leave Feedback
+                                    </a>
+                                </div>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>
