@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from app.models import Message, AuthUser 
 from django.http import JsonResponse
-from django.utils.timezone import now
+from django.utils.timezone import now, localtime
 from django.db import models
 
 @login_required
@@ -45,7 +45,7 @@ def messenger(request):
                 'message': {
                     'id': message.id,
                     'content': message.text,
-                    'timestamp': message.timestamp.strftime("%H:%M"),
+                    'timestamp': localtime(message.timestamp).strftime("%I:%M %p"),
                     'sender_id': sender_id,
                     'receiver_id': receiver_id
                 }
@@ -71,7 +71,7 @@ def messenger(request):
             messages_data = [{
                 'id': msg.id,
                 'text': msg.text,
-                'timestamp': msg.timestamp.strftime("%H:%M"),
+                'timestamp': localtime(msg.timestamp).strftime("%I:%M %p"),
                 'sender_id': msg.sender_id,
                 'receiver_id': msg.receiver_id
             } for msg in messages]

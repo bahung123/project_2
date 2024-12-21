@@ -170,15 +170,56 @@
     <script>
         $(document).ready(function() {
             var chatMessages = document.getElementById('chatMessages');
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            var lastMessageId = 0;
+            
+            function scrollToBottom() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function refreshMessages() {
+                $.ajax({
+                    url: '{% url "messenger" %}',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        var messages = '';
+                        response.messages.forEach(function(msg) {
+                            if (msg.id > lastMessageId) {
+                                messages += `
+                                    <div class="message ${msg.sender_id == {{ user.id }} ? 'sent' : 'received'}">
+                                        <div class="avatar">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div class="message-bubble">
+                                            ${msg.text}
+                                        </div>
+                                        <div class="message-time">
+                                            ${msg.timestamp}
+                                        </div>
+                                    </div>
+                                `;
+                                lastMessageId = msg.id;
+                            }
+                        });
+                        if (messages) {
+                            $('#chatMessages').append(messages);
+                            scrollToBottom();
+                        }
+                    }
+                });
+            }
+
+            // Refresh every 1 second
+            setInterval(refreshMessages, 1000);
 
             $('#messageForm').on('submit', function(e) {
                 e.preventDefault();
                 var form = $(this);
                 var messageInput = form.find('input[name="message"]');
-                var message = messageInput.val();
+                var message = messageInput.val().trim();
 
-                if (message.trim()) {
+                if (message) {
                     $.ajax({
                         type: 'POST',
                         url: '{% url "messenger" %}',
@@ -191,6 +232,9 @@
                             if (response.status === 'success') {
                                 var newMessage = `
                                     <div class="message sent">
+                                        <div class="avatar">
+                                            <i class="fas fa-user"></i>
+                                        </div>
                                         <div class="message-bubble">
                                             ${response.message.content}
                                         </div>
@@ -200,42 +244,14 @@
                                     </div>
                                 `;
                                 $('#chatMessages').append(newMessage);
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                                scrollToBottom();
+                                lastMessageId = response.message.id;
                             }
                         }
                     });
                     messageInput.val('');
                 }
             });
-
-            // Auto refresh messages every 3 seconds
-            function refreshMessages() {
-                $.ajax({
-                    url: '{% url "messenger" %}',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    success: function(response) {
-                        var messages = '';
-                        response.messages.forEach(function(msg) {
-                            messages += `
-                                <div class="message ${msg.sender_id == {{ user.id }} ? 'sent' : 'received'}">
-                                    <div class="message-bubble">
-                                        ${msg.text}
-                                    </div>
-                                    <div class="message-time">
-                                        ${msg.timestamp}
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        $('#chatMessages').html(messages);
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                    }
-                });
-            }
-
-            setInterval(refreshMessages, 3000);
         });
     </script>
 </body>
