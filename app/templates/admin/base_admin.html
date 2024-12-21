@@ -230,41 +230,5 @@
             </main>
         </div>
     </div>
-
-    <!-- Messenger Icon -->
-    <div id="messenger-icon" class="position-fixed bottom-0 end-0 mb-4 me-4" style="z-index: 1000;">
-        <button class="btn btn-primary rounded-circle p-3" data-bs-toggle="modal" data-bs-target="#messengerModal">
-            <i class="fas fa-comments fa-2x"></i>
-        </button>
-    </div>
-
-    <!-- Messenger Modal -->
-    <div class="modal fade" id="messengerModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-end">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Messages</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-0">
-                    {% include 'admin/messages.html' %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add styles -->
-    {% block extra_css %}
-    <style>
-    .modal-dialog-end {
-        position: fixed;
-        right: 1rem;
-        bottom: 1rem;
-        margin: 0;
-        width: 350px;
-    }
-    </style>
-    {% endblock %}
-
 </body>
 </html>

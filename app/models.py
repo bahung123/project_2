@@ -198,21 +198,7 @@ class Image(models.Model):
     class Meta:
         managed = False
         db_table = 'image'
-
-class Message(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    sender = models.ForeignKey(User, on_delete=models.DO_NOTHING)
-    receiver = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='message_receiver_set')
-    text = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
-
-    class Meta:
-        managed = False
-        db_table = 'message'
-
-        
-
+     
 class Reservation(models.Model):
     guest = models.ForeignKey(Guest, models.DO_NOTHING)
     book_date = models.DateTimeField(blank=True, null=True)
