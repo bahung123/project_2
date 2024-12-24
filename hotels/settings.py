@@ -127,3 +127,17 @@ LOGIN_URL = 'login'  # Tên URL của trang đăng nhập
 # Định dạng ngày tháng
 TIME_ZONE = 'Asia/Ho_Chi_Minh'
 USE_TZ = True
+
+# Email Settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Or your SMTP server
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'hba137282@gmail.com'
+EMAIL_HOST_PASSWORD = 'rmyp bwyh lrvy cndd'  # Use app password for Gmail
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+CONTACT_EMAIL = 'nguyenbadat2692003@gmail.com'  # Email where you want to receive contact form messages
+
+# Add this at the bottom of settings.py
+GOOGLE_MAPS_API_KEY = 'AIzaSyBw-NgtCW3Jz5VDmA3nt-hQ7vgpH2K0jLE'
+

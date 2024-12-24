@@ -12,62 +12,109 @@
     </div>
 </div>
 <!-- Page Header End -->
- <!-- Room Start -->
+
+<!-- Room Grid -->
 <div class="container-xxl py-5">
     <div class="container">
-        <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
-            <h6 class="section-title text-center text-primary text-uppercase">Our Rooms</h6>
-            <h1 class="mb-5">Explore Our <span class="text-primary text-uppercase">Rooms</span></h1>
-        </div>
+        <!-- Room Cards -->
         <div class="row g-4">
             {% for room_type in room_types %}
-                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
-                    <div class="room-item shadow rounded overflow-hidden">
-                        <div class="position-relative">
-                            <!-- Hiển thị hình ảnh từ ImageField -->
-                            {% if room_type.image %}
-                                <img class="img-fluid" src="{{ room_type.image.image_file.url }}" alt="Room Image">
-                            {% else %}
-                                <img class="img-fluid" src="{% static 'images/default-room.jpg' %}" alt="Default Image">
-                            {% endif %}
-                            <small class="position-absolute start-0 top-100 translate-middle-y bg-primary text-white rounded py-1 px-3 ms-4">
-                                ${{ room_type.base_price|default:"0" }}/Night
-                            </small>
+            <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+                <div class="room-card shadow-lg rounded overflow-hidden">
+                    <!-- Room Image -->
+                    <div class="position-relative overflow-hidden">
+                        {% if room_type.main_image %}
+                            <img src="{{ room_type.main_image.image_file.url }}" class="img-fluid w-100" alt="{{ room_type.name }}" 
+                                 style="height: 300px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'img/default-room.jpg' %}" class="img-fluid w-100" alt="Default Room">
+                        {% endif %}
+                        
+                        <!-- Price Badge -->
+                        <div class="price-badge">
+                            <span class="bg-primary text-white px-4 py-2 rounded-end">
+                                ${{ room_type.base_price }}/Night
+                            </span>
                         </div>
-                        <div class="p-4 mt-2">
-                            <div class="d-flex justify-content-between mb-3">
-                                <h5 class="mb-0">{{ room_type.name|default:"Unknown Room Type" }}</h5>
-                                <div class="ps-2">
-                                    <!-- Hiển thị đánh giá sao -->
-                                    {% for i in 1..5 %}
-                                        <small class="fa fa-star {% if i <= room_type.rating|default:0 %}text-primary{% else %}text-muted{% endif %}"></small>
-                                    {% endfor %}
-                                </div>
+                        
+                        <!-- Availability Badge -->
+                        {% if room_type.available_count > 0 %}
+                            <div class="availability-badge">
+                                <span class="bg-success text-white px-3 py-1 rounded">
+                                    {{ room_type.available_count }} Available
+                                </span>
                             </div>
-                            <div class="d-flex mb-3">
-                                <small class="border-end me-3 pe-3">
-                                    <i class="fa fa-bed text-primary me-2"></i>{{ room_type.num_beds|default:"?" }} Bed
-                                </small>
-                                <small class="border-end me-3 pe-3">
-                                    <i class="fa fa-bath text-primary me-2"></i>{{ room_type.num_baths|default:"?" }} Bath
-                                </small>
-                                <small>
-                                    <i class="fa fa-wifi text-primary me-2"></i>Wifi
-                                </small>
-                            </div>
-                            <p class="text-body mb-3">{{ room_type.description|default:"No description available." }}</p>
-                            <div class="d-flex justify-content-between">
-                                <a class="btn btn-sm btn-primary rounded py-2 px-4" href="#">View Detail</a>
-                                <a class="btn btn-sm btn-dark rounded py-2 px-4" href="{% url 'booking'%}">Book Now</a>
-                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Room Details -->
+                    <div class="p-4">
+                        <h4 class="mb-3">{{ room_type.name }}</h4>
+                        <!-- Room Features -->
+                        <div class="features mb-3">
+                            <span class="feature">
+                                <i class="fa fa-bed text-primary"></i>
+                                {{ room_type.num_beds }} Beds
+                            </span>
+                            <small class="border-end me-3 pe-3">
+                                <i class="fa fa-wifi text-primary me-2"></i>{{ room_type.wifi|default:"WiFi" }}
+                            </small>
+                            <span class="feature">
+                                <i class="fa fa-arrows-alt text-primary"></i>
+                                {{ room_type.min_area }}m²
+                            </span>
+                        </div>
+
+                        <!-- Amenities -->
+                        <div class="amenities mb-4">
+                            {% for amenity in room_type.amenities|slice:":3" %}
+                            <span class="badge bg-light text-dark me-2 mb-2">{{ amenity }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'room_detail_user' room_type.id %}" class="btn btn-primary">
+                                View Details
+                            </a>
+                            <a href="{% url 'booking' %}?room_type={{ room_type.id }}" class="btn btn-dark">
+                                Book Now
+                            </a>
                         </div>
                     </div>
                 </div>
+            </div>
             {% endfor %}
         </div>
     </div>
 </div>
-<!-- Room End -->
- 
-{% endblock %}
 
+<style>
+.room-card {
+    transition: transform 0.3s;
+}
+.room-card:hover {
+    transform: translateY(-5px);
+}
+.price-badge {
+    position: absolute;
+    top: 20px;
+    left: 0;
+}
+.availability-badge {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+}
+.feature {
+    margin-right: 1rem;
+}
+.feature i {
+    margin-right: 0.5rem;
+}
+.amenities .badge {
+    font-weight: normal;
+    padding: 0.5rem 1rem;
+}
+</style>
+{% endblock %}

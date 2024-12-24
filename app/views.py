@@ -10,12 +10,25 @@ from django.db.models import Q
 from django.db import transaction
 from django.views.decorators.csrf import csrf_protect
 from django.utils.timezone import now
+from django.core.mail import send_mail
+from django.conf import settings
+
 
 
 def index(request):
-    room_types = RoomType.objects.all()
+    room_types = RoomType.objects.all().prefetch_related('room_set')
+    
     for room_type in room_types:
-        room_type.image = Image.objects.filter(room_type_id=room_type.id).first()
+        # Lấy ảnh đầu tiên của room type
+        room_type.main_image = Image.objects.filter(room_type_id=room_type.id).first()
+        # Đếm số phòng còn trống 
+        room_type.available_count = room_type.room_set.filter(status='available').count()
+        # Xử lý amenities từ description
+        room_type.amenities = [
+            amenity.strip() 
+            for amenity in room_type.description.split(',')
+        ] if room_type.description else []
+    
     return render(request, 'user/index.html', {'room_types': room_types})
 
 def login(request):
@@ -165,21 +178,73 @@ def change_password(request):
 
 
 def room(request):
-    room_types = RoomType.objects.all()
+    # Lấy tất cả room types
+    room_types = RoomType.objects.all().prefetch_related('room_set')
+    
+    # Xử lý cho mỗi room type
     for room_type in room_types:
-        room_type.image = Image.objects.filter(room_type_id=room_type.id).first()
-    return render(request, 'user/room.html', {'room_types': room_types})
+        # Lấy ảnh đầu tiên của room type
+        room_type.main_image = Image.objects.filter(room_type_id=room_type.id).first()
+        # Đếm số phòng còn trống
+        room_type.available_count = room_type.room_set.filter(status='available').count()
+        # Xử lý amenities từ description
+        room_type.amenities = [
+            amenity.strip() 
+            for amenity in room_type.description.split(',')
+        ] if room_type.description else []
+    
+    context = {
+        'room_types': room_types,
+    }
+    return render(request, 'user/room.html', context)
 
 
-def room_detail(request):
-    return render(request, 'user/room_detail.html')
+def room_detail_user(request, room_type_id):
+    room_type = get_object_or_404(RoomType, pk=room_type_id)
+    room_type.images = Image.objects.filter(room_type_id=room_type.id)
+    
+    context = {
+        'room_type': room_type
+    }
+    return render(request, 'user/room_detail.html', context)
 
 def about(request):
     return render(request, 'user/about.html')
 
 
 def contact(request):
-    return render(request, 'user/contact.html')
+    context = {
+        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
+    }
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+        
+        # Validate form data
+        if not all([name, email, subject, message]):
+            messages.error(request, 'Please fill in all fields.')
+            return redirect('contact')
+        
+        try:
+            # Send email notification
+            send_mail(
+                subject=f"Contact Form: {subject}",
+                message=f"From: {name}\nEmail: {email}\n\nMessage:\n{message}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[settings.CONTACT_EMAIL],
+                fail_silently=False,
+            )
+            messages.success(request, 'Thank you for your message! We will contact you soon.')
+            return redirect('contact')
+            
+        except Exception as e:
+            messages.error(request, 'Sorry, there was an error sending your message. Please try again later.')
+            return redirect('contact')
+            
+    return render(request, 'user/contact.html', context)
+
 
 def service(request):
     services = Service.objects.all()

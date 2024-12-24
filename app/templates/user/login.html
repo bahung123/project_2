@@ -1,36 +1,95 @@
 {% extends "user/index.html" %}
+{% load static %}
+
 {% block content %}
-    <div class="container vh-100 d-flex justify-content-center align-items-center">
-        <div class="card shadow p-4" style="width: 400px;">
-            <h2 class="text-center mb-4">Login</h2>
-            {% if error %}
-                <div class="alert alert-danger" role="alert">
-                    {{ error }}
-                </div>
-            {% endif %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-danger" role="alert">
-                        {{ message }}
+<div class="container-fluid py-5 wow fadeInUp" data-wow-delay="0.1s">
+    <div class="container d-flex justify-content-center align-items-center min-vh-100">
+        <div class="row justify-content-center w-100">
+            <div class="col-lg-6 col-md-8">
+                <div class="card border-0 shadow-lg">
+                    <!-- Left side - Login Form -->
+                    <div class="card-body p-5">
+                        <!-- Logo -->
+                        <div class="text-center mb-4">
+                            <img src="{% static 'images/logo.jpg' %}" alt="Hotel Logo" class="mb-3" style="height: 60px;">
+                            <h3 class="text-primary">Welcome Back</h3>
+                            <p class="text-muted">Please login to your account</p>
+                        </div>
+
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <form method="POST" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            
+                            <!-- Username Input -->
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       placeholder="Username" required>
+                                <label for="username">Username</label>
+                            </div>
+
+                            <!-- Password Input -->
+                            <div class="form-floating mb-3">
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Password" required>
+                                <label for="password">Password</label>
+                            </div>
+
+                            <!-- Remember Me & Forgot Password -->
+                            <div class="d-flex justify-content-between mb-4">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                                    <label class="form-check-label text-muted" for="remember">Remember me</label>
+                                </div>
+                            </div>
+
+                            <!-- Login Button -->
+                            <button type="submit" class="btn btn-primary w-100 py-3 mb-4">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </button>
+
+                            <!-- Register Link -->
+                            <div class="text-center">
+                                <p class="text-muted">Don't have an account? 
+                                    <a href="{% url 'register' %}" class="text-primary">Register now</a>
+                                </p>
+                            </div>
+                            </div>
+                        </form>
                     </div>
-                {% endfor %}
-            {% endif %}
-            <form method="POST">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="username" class="form-label">Username</label>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
                 </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Login</button>
-            </form>
-            <p class="text-center mt-3">
-                Don't have an account? <a href="{%url 'register'%}">Sign up</a>
-            </p>
+            </div>
         </div>
     </div>
-    <div class="mt-5"></div>
+</div>
+
+<style>
+.card {
+    border-radius: 15px;
+    backdrop-filter: blur(5px);
+}
+.form-floating>.form-control {
+    border-radius: 10px;
+}
+.btn {
+    border-radius: 10px;
+}
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+}
+.social-btn {
+    transition: all 0.3s;
+}
+.social-btn:hover {
+    transform: translateY(-3px);
+}
+</style>
 {% endblock %}

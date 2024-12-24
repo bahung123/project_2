@@ -48,9 +48,11 @@ def employee_list(request, pk=None):
         return render(request, 'admin/employee_list.html', context)
 
     elif action == 'edit' and pk:
-        # Hiển thị form chỉnh sửa
+        # Get employee and branches
         employee = get_object_or_404(Employee, pk=pk)
         user = AuthUser.objects.get(pk=employee.user_id)
+        branches = Branch.objects.all()
+        
         if request.method == 'POST':
             full_name = request.POST.get('full_name')
             phone_number = request.POST.get('phone_number')
@@ -59,25 +61,11 @@ def employee_list(request, pk=None):
             department = request.POST.get('department')
             salary = request.POST.get('salary')
             status = request.POST.get('status')
+            branch_id = request.POST.get('branch')
 
-            # Kiểm tra số điện thoại có trùng với nhân viên khác không (ngoại trừ nhân viên hiện tại)
-            if Employee.objects.filter(phone_number=phone_number).exclude(pk=employee.pk).exists():
-                context['error'] = 'Phone number already exists for another employee'
-                context['employee'] = employee
-                messages.error(request, 'Phone number already exists for another employee')
-                return render(request, 'admin/employee_list.html', context)
+            # Validation checks...
             
-            # Kiểm tra email có trùng với nhân viên khác không (ngoại trừ nhân viên hiện tại)
-            if Employee.objects.filter(email=email).exclude(pk=pk).exists():
-                context['error'] = 'Email already exists'
-                context['employee'] = employee
-                messages.error(request, 'Email already exists')
-                return render(request, 'admin/employee_list.html', context)
-            
-            #cập nhật authuser
-            user.email = email
-            user.save()
-            # cập nhật thông tin nhân viên
+            # Update employee
             employee.full_name = full_name
             employee.phone_number = phone_number
             employee.email = email
@@ -85,10 +73,20 @@ def employee_list(request, pk=None):
             employee.department = department
             employee.salary = salary
             employee.status = status
+            employee.branch_id = branch_id
             employee.save()
+            
+            # Update user email
+            user.email = email
+            user.save()
+            
             messages.success(request, 'Employee updated successfully')
             return redirect('employee_list')
-        context['employee'] = employee
+
+        context.update({
+            'employee': employee,
+            'branches': branches
+        })
         return render(request, 'admin/employee_list.html', context)
 
     elif action == 'delete' and pk:

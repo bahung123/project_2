@@ -2,7 +2,8 @@ from django.urls import path
 # my_app/urls.py
 from .views import (
     index, login, register, room as user_room, 
-    room_detail, booking, about, contact, 
+    room_detail_user,  # Sửa thành room_detail_user thay vì room_detail
+    booking, about, contact, 
     service as user_service, logout_view, 
     account_info, update_account_info, 
     change_password, search_rooms, booking_history , feedback_view
@@ -19,7 +20,6 @@ urlpatterns = [
     path('login/', login, name='login'),
     path('register/', register, name='register'),
     path('room/', user_room, name='room'),
-    path('room_detail/', room_detail, name='room_detail'),
     path('booking/', booking, name='booking'),
     path('about/', about, name='about'),
     path('contact/', contact, name='contact'),
@@ -30,6 +30,7 @@ urlpatterns = [
     path('change_password/', change_password, name='change_password'),
     path('search-rooms/', search_rooms, name='search_rooms'),
     path('booking-history/', booking_history, name='booking_history'),
+    path('room-detail-user/<int:room_type_id>/', room_detail_user, name='room_detail_user'),  # Sửa tên URL pattern
     
     # Admin URLs
     path('base_admin/', base_admin.base_admin, name='base_admin'),

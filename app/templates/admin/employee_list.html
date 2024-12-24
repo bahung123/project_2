@@ -11,6 +11,9 @@
             <td>{{ employee.full_name }}</td>
         </tr>
         <tr>
+            <th>Branch</th>
+            <td>{{ employee.branch.name}}</td>
+        <tr>
             <th>Phone Number</th>
             <td>{{ employee.phone_number }}</td>
         </tr>
@@ -54,6 +57,15 @@
         <div class="mb-3">
             <label for="full_name" class="form-label">Full Name</label>
             <input type="text" id="full_name" name="full_name" class="form-control" value="{{ employee.full_name }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="branch" class="form-label">Branch</label>
+            <select class="form-control" id="branch" name="branch" required>
+                <option value="">Select a Branch</option>
+                {% for branch in branches %}
+                <option value="{{ branch.id }}" {% if branch.id == employee.branch.id %}selected{% endif %}>{{ branch.name }}</option>
+                {% endfor %}
+            </select>
         </div>
         <div class="mb-3">
             <label for="phone_number" class="form-label">Phone Number</label>

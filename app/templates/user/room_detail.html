@@ -1,0 +1,105 @@
+{% extends "user/index.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Page Header Start -->
+<div class="container-fluid page-header mb-5 p-0" style="background-image: url({% static 'images/carousel-1.jpg' %}); background-position: center;">
+    <div class="container-fluid page-header-inner py-5">
+        <div class="container text-center pb-5">
+            <h1 class="display-3 text-white mb-3 animated slideInDown">Room Details</h1>
+        </div>
+    </div>
+</div>
+<!-- Page Header End -->
+
+<!-- Room Details Start -->
+<div class="container-xxl py-5">
+    <div class="container">
+        <div class="row g-5">
+            <div class="col-lg-6">
+                <div class="wow fadeIn" data-wow-delay="0.1s">
+                    <!-- Image Carousel -->
+                    <div id="roomCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% if room_type.images %}
+                                {% for image in room_type.images %}
+                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                        <img src="{{ image.image_file.url }}" class="d-block w-100 rounded" alt="Room Image" style="height: 400px; object-fit: cover;">
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="carousel-item active">
+                                    <img src="{% static 'images/default-room.jpg' %}" class="d-block w-100 rounded" alt="Default Room Image" style="height: 400px; object-fit: cover;">
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% if room_type.images.count > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#roomCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#roomCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="wow fadeIn" data-wow-delay="0.2s">
+                    <h1 class="mb-3">{{ room_type.name }}</h1>
+                    <div class="d-flex mb-3">
+                        <small class="border-end me-3 pe-3">
+                            <i class="fa fa-bed text-primary me-2"></i>
+                            {{ room_type.num_beds }} Bed{% if room_type.num_beds > 1 %}s{% endif %}
+                        </small>
+                        <small class="border-end me-3 pe-3">
+                            <i class="fa fa-ruler-combined text-primary me-2"></i>
+                            {{ room_type.min_area }} - {{ room_type.max_area }} m²
+                        </small>
+                        <small>
+                            <i class="fa fa-wifi text-primary me-2"></i>
+                            Free Wifi
+                        </small>
+                    </div>
+                    <h3 class="text-primary mb-4">${{ room_type.base_price }}/Night</h3>
+                    <p class="mb-4">{{ room_type.description|default:"No description available." }}</p>
+                    
+                    <!-- Room Features -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-sm-6">
+                            <div class="border rounded p-3">
+                                <h6>Room Features</h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li><i class="fa fa-check text-primary me-2"></i>Air Conditioning</li>
+                                    <li><i class="fa fa-check text-primary me-2"></i>Flat-screen TV</li>
+                                    <li><i class="fa fa-check text-primary me-2"></i>Private Bathroom</li>
+                                    <li><i class="fa fa-check text-primary me-2"></i>Free WiFi</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="border rounded p-3">
+                                <h6>Room Services</h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li><i class="fa fa-check text-primary me-2"></i>Room Service</li>
+                                    <li><i class="fa fa-check text-primary me-2"></i>Daily Housekeeping</li>
+                                    <li><i class="fa fa-check text-primary me-2"></i>24/7 Reception</li>
+                                    <li><i class="fa fa-check text-primary me-2"></i>In-room Safe</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Booking Button -->
+                    <a href="{% url 'booking' %}?room_type={{ room_type.id }}" class="btn btn-primary py-3 px-5">
+                        Book Now <i class="fa fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Room Details End -->
+{% endblock %}

@@ -19,14 +19,61 @@
             <!-- Contact Info -->
             <div class="col-lg-6">
                 <h5 class="text-primary mb-4">Contact Details</h5>
-                <p><i class="fa fa-map-marker-alt text-primary me-3"></i>123 Street Name, City, Country</p>
-                <p><i class="fa fa-phone-alt text-primary me-3"></i>+1 234 567 890</p>
-                <p><i class="fa fa-envelope text-primary me-3"></i>info@example.com</p>
+                <p><i class="fa fa-map-marker-alt text-primary me-3"></i>240 Phạm Ngũ Lão, Phường 1, TP Trà Vinh</p>
+                <p><i class="fa fa-phone-alt text-primary me-3"></i>0818 837 212</p>
+                <p><i class="fa fa-envelope text-primary me-3"></i>hotel@gmail.com</p>
+                
+                <!-- Social Media Links -->
+                <div class="d-flex pt-3">
+                    <a class="btn btn-outline-light btn-social rounded-circle" href="">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a class="btn btn-outline-light btn-social rounded-circle" href="">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                    <a class="btn btn-outline-light btn-social rounded-circle" href="">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                </div>
             </div>
             <!-- Map -->
             <div class="col-lg-6">
                 <h5 class="text-primary mb-4">Our Location</h5>
                 <div id="map" style="width: 100%; height: 400px;"></div>
+            </div>
+            <!-- Contact Form Section -->
+            <div class="col-lg-6">
+                <h5 class="text-primary mb-4">Send Us a Message</h5>
+                {% if messages %}
+                <div class="container mt-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" name="name" placeholder="Your Name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="email" class="form-control" name="email" placeholder="Your Email" required>
+                        </div>
+                        <div class="col-12">
+                            <input type="text" class="form-control" name="subject" placeholder="Subject" required>
+                        </div>
+                        <div class="col-12">
+                            <textarea class="form-control" name="message" rows="5" placeholder="Message" required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-primary w-100 py-3" type="submit">Send Message</button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -34,19 +81,29 @@
 <!-- Contact Section End -->
 
 <script>
-    // Initialize Google Map
     function initMap() {
-        const location = { lat: 37.7749, lng: -122.4194 }; // Thay tọa độ bằng địa chỉ của bạn
-        const map = new google.maps.Map(document.getElementById("map"), {
-            zoom: 12,
+        const location = { lat: 9.934750, lng: 106.346870 };
+        const mapOptions = {
+            zoom: 15,
             center: location,
-        });
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        
+        const map = new google.maps.Map(document.getElementById("map"), mapOptions);
+        
         const marker = new google.maps.Marker({
             position: location,
             map: map,
+            title: "Hotelier"
         });
     }
 </script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAkmSNYkac0IPYpY4bNfR-C0rNWTOxRHYw&callback=initMap" async defer></script>
+<!-- Load Google Maps API with key from settings -->
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap" async defer></script>
+{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="Contact Hotelier - Your Luxury Hotel in Tra Vinh. Get in touch with us for bookings, inquiries and feedback.">
+<meta name="keywords" content="hotel contact, luxury hotel, tra vinh hotel, hotelier contact">
 {% endblock %}
