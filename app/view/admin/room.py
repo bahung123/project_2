@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView, UpdateView, DeleteView, CreateView
 from app.models import Employee, Branch, AuthUser, Guest, RoomType, Image, Room, Service
@@ -11,13 +11,21 @@ from django.utils import timezone
 from django.db.models import Q
 from django.db import transaction
 from django.core.paginator import Paginator
+from urllib.parse import urlencode
 
 @login_required
 def room_list(request, pk=None):
     action = request.GET.get('action', 'list')
     search_query = request.GET.get('search', '')
     branch_id = request.GET.get('branch')  # Nhận giá trị chi nhánh từ URL
-    context = {'action': action, 'search_query': search_query}
+    page = request.GET.get('page', '1')  # Lấy số trang hiện tại
+    context = {
+        'action': action,
+        'search_query': search_query,
+        'selected_branch_id': branch_id,
+        'current_page': page,
+        # ... other context data ...
+    }
 
     # Lấy danh sách chi nhánh để hiển thị bộ lọc
     branches = Branch.objects.all()
@@ -64,10 +72,9 @@ def room_list(request, pk=None):
         return render(request, 'admin/room_list.html', context)
 
     elif action == 'edit' and pk:
-        # Lấy dữ liệu phòng và hình ảnh liên quan
         room = get_object_or_404(Room, pk=pk)
         room.images = Image.objects.filter(room_id=room.id)
-        room_types = RoomType.objects.all()  # Lấy tất cả các loại phòng
+        room_types = RoomType.objects.all()
 
         context = {
             'action': 'edit',
@@ -76,47 +83,68 @@ def room_list(request, pk=None):
         }
 
         if request.method == 'POST':
-            # Lấy dữ liệu từ form
+            # Handle image deletion first
+            delete_image_id = request.POST.get('delete_image_id')
+            if delete_image_id:
+                Image.objects.filter(id=delete_image_id, room_id=room.id).delete()
+                messages.success(request, 'Image deleted successfully.')
+                # Refresh room images
+                room.images = Image.objects.filter(room_id=room.id)
+                return render(request, 'admin/room_list.html', context)
+
+            # Handle other form submission
             room_number = request.POST.get('room_number')
             description = request.POST.get('description')
             status = request.POST.get('status')
             room_type_id = request.POST.get('room_type')
             images = request.FILES.getlist('images')
-            delete_image_id = request.POST.get('delete_image_id')
 
-            # Kiểm tra nếu số phòng trống
+            # Validate room number
             if not room_number:
                 messages.error(request, 'Room number cannot be empty.')
                 return render(request, 'admin/room_list.html', context)
 
-            # Kiểm tra nếu số phòng đã tồn tại trong cùng chi nhánh
-            if Room.objects.filter(room_number=room_number, branch=room.branch).exclude(pk=pk).exists():
-                messages.error(request, 'Room number already exists in the same branch.')
+            # Validate status changes
+            current_status = room.status
+            new_status = request.POST.get('status')
+
+            # Chỉ cho phép thay đổi trạng thái nếu phòng đang Available hoặc Maintenance
+            if current_status not in ['available', 'maintenance']:
+                if current_status != new_status:  # Nếu cố gắng thay đổi trạng thái
+                    messages.error(request, 'Cannot edit room status while room is in use')
+                    return render(request, 'admin/room_list.html', context)
+                
+            # Validate new status value 
+            if new_status not in ['available', 'maintenance', 'occupied', 'booked']:
+                messages.error(request, 'Invalid room status selected')
                 return render(request, 'admin/room_list.html', context)
 
-            # Cập nhật thông tin phòng
-            room.room_number = room_number
-            room.description = description
-            room.status = status
-            room.room_type_id = room_type_id
-            room.save()
+            try:
+                # Update room details
+                room.room_number = room_number
+                room.description = description
+                room.status = new_status  # Cập nhật status mới
+                room.room_type_id = room_type_id
+                room.save()
 
-            # Xóa ảnh nếu có
-            if delete_image_id:
-                try:
-                    image_to_delete = Image.objects.get(id=delete_image_id)
-                    image_to_delete.delete()
-                except Image.DoesNotExist:
-                    messages.error(request, 'Image to delete not found.')
-                    return render(request, 'admin/room_list.html', context)
+                # Handle new images
+                for image in images:
+                    Image.objects.create(room_id=room.id, image_file=image)  # Use room_id instead of room
 
-            # Lưu ảnh mới nếu có
-            if images:
-                for image_file in images:
-                    Image.objects.create(room_id=room.id, image_file=image_file)
+                messages.success(request, 'Room updated successfully.')
+                # Redirect về đúng trang với các tham số
+                base_url = reverse('room_list') 
+                params = {
+                    'page': page,
+                    'branch': branch_id or '',
+                    'search': search_query or ''
+                }
+                url = f"{base_url}?{urlencode(params)}"
+                return redirect(url)
 
-            messages.success(request, 'Room updated successfully.')
-            return redirect('room_list')
+            except Exception as e:
+                messages.error(request, f'Error updating room: {str(e)}')
+                return render(request, 'admin/room_list.html', context)
 
         return render(request, 'admin/room_list.html', context)
 
@@ -147,7 +175,6 @@ def room_list(request, pk=None):
         if request.method == 'POST':
             room_number = request.POST.get('room_number')
             description = request.POST.get('description')
-            status = request.POST.get('status')
             branch_id = request.POST.get('branch')
             room_type_id = request.POST.get('room_type')
             images = request.FILES.getlist('images')
@@ -174,8 +201,8 @@ def room_list(request, pk=None):
             room = Room.objects.create(
                 room_number=room_number,
                 description=description,
-                status=status,
                 branch=branch,
+                status='available',
                 room_type=room_type
             )
 
@@ -184,7 +211,15 @@ def room_list(request, pk=None):
                 Image.objects.create(room_id=room.id, image_file=image_file)  # Sửa ở đây
 
             messages.success(request, 'Room added successfully.')
-            return redirect('room_list')
+            # Redirect with parameters
+            base_url = reverse('room_list')
+            params = {
+                'page': page,
+                'branch': branch_id or '',
+                'search': search_query or ''
+            }
+            url = f"{base_url}?{urlencode(params)}"
+            return redirect(url)
 
         # Nếu không phải POST, hiển thị form thêm phòng
         context['room_types'] = RoomType.objects.all()

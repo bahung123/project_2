@@ -104,6 +104,10 @@ def reservation_edit(request, reservation_id):
                     reservation.check_in_time = datetime.strptime(check_in_time, '%H:%M').time()
                     reservation.status = 'checked_in'
                     auto_update_status = True
+                # Cập nhật trạng thái các phòng liên quan thành Occupied
+                    for room in reservation.reservationroom_set.all():
+                        room.room.status = 'occupied'
+                        room.room.save()
                 except ValueError:
                     messages.error(request, 'Invalid check-in time format')
                     return redirect('reservation_list')
@@ -133,6 +137,11 @@ def reservation_edit(request, reservation_id):
                     
                     reservation.status = 'checked_out'
                     auto_update_status = True
+
+                    # Cập nhật trạng thái các phòng liên quan thành Available
+                    for room in reservation.reservationroom_set.all():
+                        room.room.status = 'available'
+                        room.room.save()
                     
                 except ValueError as e:
                     print(f"Error parsing time: {e}")  # Debug lỗi

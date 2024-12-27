@@ -136,7 +136,17 @@
                         <!-- Tình trạng phòng -->
                         <div class="mb-3">
                             <label for="status" class="form-label">Status</label>
-                            <input type="text" id="status" name="status" class="form-control" value="{{ room.status }}" required>
+                            <select id="status" name="status" class="form-select" 
+                                {% if room.status != 'available' and room.status != 'maintenance' %}disabled{% endif %} required>
+                                <option value="available" {% if room.status == 'available' %}selected{% endif %}>available</option>
+                                <option value="maintenance" {% if room.status == 'maintenance' %}selected{% endif %}>maintenance</option>
+                                <option value="occupied" {% if room.status == 'occupied' %}selected{% endif %} disabled>occupied</option>
+                                <option value="booked" {% if room.status == 'booked' %}selected{% endif %} disabled>Booked</option>
+                            </select>
+                            {% if room.status != 'available' and room.status != 'maintenance' %}
+                                <small class="text-muted">Status cannot be changed while room is {{ room.status }}</small>
+                                <input type="hidden" name="status" value="{{ room.status }}">
+                            {% endif %}
                         </div>
                 
                         <!-- Mô tả -->
@@ -197,10 +207,6 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="status" class="form-label">Status</label>
-                            <input type="text" id="status" name="status" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
                             <label for="description" class="form-label">Description</label>
                             <textarea id="description" name="description" class="form-control"></textarea>
                         </div>
@@ -226,40 +232,70 @@
                 </div>
 
             {% else %}
-                <!-- Danh sách phòng -->
-                {% for room in page_obj %}
-                <div class="col-lg-4 col-md-6">
-                    <div class="room-item shadow rounded">
-                        <div class="position-relative">
-                            {% if room.images %}
-                                <div class="swiper-container">
-                                    <div class="swiper-wrapper">
-                                        <!-- Hiển thị chỉ ảnh đầu tiên -->
-                                        <div class="swiper-slide">
-                                            <img class="img-fluid" src="{{ room.images.0.image_file.url }}" alt="Room Image">
-                                        </div>
+                <!-- Room List Grid -->
+                <div class="row g-4">
+                    {% for room in page_obj %}
+                    <div class="col-lg-4 col-md-6">
+                        <div class="card h-100">
+                            <!-- Room Images -->
+                            <div id="carousel{{ room.id }}" class="carousel slide" data-bs-ride="carousel">
+                                <div class="carousel-inner">
+                                    {% for image in room.images %}
+                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                        <img src="{{ image.image_file.url }}" class="d-block w-100" alt="Room Image" style="height: 200px; object-fit: cover;">
                                     </div>
+                                    {% endfor %}
                                 </div>
-                            {% else %}
-                                <img class="img-fluid" src="{% static 'images/default-room.jpg' %}" alt="Default Image">
-                            {% endif %}
-                        </div>
-                        <div class="p-3">
-                            <h5>{{ room.room_number|default:"Unknown Room" }}</h5>
-                            <p>{{ room.description|default:"No description available." }}</p>
-                            <div class="d-flex justify-content-between">
+                                {% if room.images|length > 1 %}
+                                <button class="carousel-control-prev" type="button" data-bs-target="#carousel{{ room.id }}" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#carousel{{ room.id }}" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                                {% endif %}
+                            </div>
+
+                            <div class="card-body">
+                                <!-- Room Status Badge -->
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="card-title mb-0">Room {{ room.room_number }}</h5>
+                                    <span class="badge {% if room.status == 'available' %}bg-success
+                                                     {% elif room.status == 'occupied' %}bg-danger
+                                                     {% elif room.status == 'booked' %}bg-warning
+                                                     {% elif room.status == 'maintenance' %}bg-secondary
+                                                     {% else %}bg-info{% endif %}">
+                                        {{ room.status|title }}
+                                    </span>
+                                </div>
+
+                                <!-- Room Details -->
+                                <p class="card-text">
+                                    <small class="text-muted">Type: {{ room.room_type.name }}</small><br>
+                                    <small class="text-muted">Branch: {{ room.branch.name }}</small><br>
+                                    {{ room.description|truncatewords:20 }}
+                                </p>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex justify-content-between mt-3">
                                 <a href="{% url 'room_detail' room.id %}?action=view" class="btn btn-primary btn-sm">View</a>
-                                <a href="{% url 'room_detail' room.id %}?action=edit" class="btn btn-warning btn-sm">Edit</a>
+                                <a href="{% url 'room_detail' room.id %}?action=edit&page={{ page_obj.number }}&branch={{ selected_branch_id }}&search={{ search_query }}" class="btn btn-warning btn-sm">Edit</a>
                                 <a href="{% url 'room_detail' room.id %}?action=delete" class="btn btn-danger btn-sm">Delete</a>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}                
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                {% include 'include/pagination.html' %}
+                {% endif %}
             {% endif %}
         </div>
-        <!-- Pagination -->
-        {% include 'include/pagination.html' %}
     </div>
 </div>
 {% endblock %}

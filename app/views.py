@@ -259,47 +259,47 @@ def service(request):
 def booking(request):
     if request.method == 'POST':
         try:
-            # Lấy thông tin từ form
-            selected_rooms = request.POST.getlist('selected_rooms')
-            check_in = request.POST.get('check_in')
-            check_out = request.POST.get('check_out')
-            guest_name = request.POST.get('guest_name')
-            guest_email = request.POST.get('guest_email')
-            guest_phone = request.POST.get('guest_phone')
-            guest_id_card = request.POST.get('guest_id_card')
-            guest_address = request.POST.get('guest_address', '') 
-            deposit_amount = request.POST.get('deposit_amount', 0)
-
-            # Debug information
-            print("DEBUG: Form data received:")
-            print(f"Selected rooms: {selected_rooms}")
-            print(f"Check in: {check_in}")
-            print(f"Check out: {check_out}")
-            print(f"Guest info: {guest_name}, {guest_email}, {guest_phone}, {guest_address}, {guest_id_card}")
-
-            # Validate dates
-            check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
-            check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
-
-            # Tạo hoặc lấy thông tin Guest
-            guest, created = Guest.objects.get_or_create(
-                email=guest_email,
-                defaults={
-                    'full_name': guest_name,
-                    'phone_number': guest_phone,
-                    'address': guest_address or '',  # Ensure address is saved even if empty
-                    'id_card': guest_id_card,
-                    'has_account': 1 if request.user.is_authenticated else 0,
-                    'user_id': request.user.id if request.user.is_authenticated else None
-                }
-            )
-
-            # Lấy branch từ room đầu tiên được chọn
-            first_room = Room.objects.get(id=selected_rooms[0])
-            branch = first_room.branch
-
-            # Tạo reservation
             with transaction.atomic():
+                # Lấy thông tin từ form
+                selected_rooms = request.POST.getlist('selected_rooms')
+                check_in = request.POST.get('check_in')
+                check_out = request.POST.get('check_out')
+                guest_name = request.POST.get('guest_name')
+                guest_email = request.POST.get('guest_email')
+                guest_phone = request.POST.get('guest_phone')
+                guest_id_card = request.POST.get('guest_id_card')
+                guest_address = request.POST.get('guest_address', '') 
+                deposit_amount = request.POST.get('deposit_amount', 0)
+
+                # Debug information
+                print("DEBUG: Form data received:")
+                print(f"Selected rooms: {selected_rooms}")
+                print(f"Check in: {check_in}")
+                print(f"Check out: {check_out}")
+                print(f"Guest info: {guest_name}, {guest_email}, {guest_phone}, {guest_address}, {guest_id_card}")
+
+                # Validate dates
+                check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
+                check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
+
+                # Tạo hoặc lấy thông tin Guest
+                guest, created = Guest.objects.get_or_create(
+                    email=guest_email,
+                    defaults={
+                        'full_name': guest_name,
+                        'phone_number': guest_phone,
+                        'address': guest_address or '',  # Ensure address is saved even if empty
+                        'id_card': guest_id_card,
+                        'has_account': 1 if request.user.is_authenticated else 0,
+                        'user_id': request.user.id if request.user.is_authenticated else None
+                    }
+                )
+
+                # Lấy branch từ room đầu tiên được chọn
+                first_room = Room.objects.get(id=selected_rooms[0])
+                branch = first_room.branch
+
+                # Tạo reservation
                 reservation = Reservation.objects.create(
                     guest=guest,
                     book_date=datetime.now(),
@@ -311,9 +311,14 @@ def booking(request):
 
                 # Tạo reservation rooms
                 for room_id in selected_rooms:
+                    room = Room.objects.get(id=room_id)
+                    room.status = 'booked'  
+                    room.save()
+                    
+                    # Create reservation room record
                     ReservationRoom.objects.create(
                         reservation=reservation,
-                        room_id=room_id
+                        room=room
                     )
 
             messages.success(request, 'Booking successful! Thank you for choosing our service.')
@@ -423,11 +428,11 @@ def search_rooms(request):
             reservation__check_out_date__gt=check_in_date
         ).values_list('room_id', flat=True)
 
-        # Get available rooms
+        # Get available rooms (excluding those in "maintenance" state)
         rooms = Room.objects.filter(
             room_type_id=room_type_id,
             branch_id=branch_id
-        ).exclude(id__in=rooms_reserved)
+        ).exclude(id__in=rooms_reserved).exclude(status='maintenance')  # Exclude rooms in maintenance
 
         if not rooms.exists():
             return JsonResponse({'error': 'No rooms available for the selected dates and branch'})

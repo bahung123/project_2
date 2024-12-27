@@ -3,102 +3,146 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1 class="mt-4">Dashboard</h1>
-<div class="row mt-4">
-    <!-- Card 1 -->
-    <div class="col-md-6 col-lg-3">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-header">Total Revenue</div>
-            <div class="card-body">
-                <h5 class="card-title">${{ total_revenue }}</h5>
-                <p class="card-text">Revenue generated from paid bills.</p>
+<div class="container-fluid px-4">
+    <h1 class="mt-4 mb-4">Dashboard</h1>
+
+    <!-- Revenue Cards Row -->
+    <div class="row g-4 mb-4">
+        <!-- Total Revenue Card -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card text-white bg-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-white-50">Total Revenue</div>
+                            <div class="display-6">${{ total_revenue|floatformat:2 }}</div>
+                            <div class="small">Monthly: ${{ monthly_revenue|floatformat:2 }}</div>
+                        </div>
+                        <i class="fas fa-dollar-sign fa-3x opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservations Card -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-white-50">Reservations</div>
+                            <div class="display-6">{{ total_reservations }}</div>
+                            <div class="small">
+                                Active: {{ active_reservations }} | Pending: {{ pending_reservations }}
+                            </div>
+                        </div>
+                        <i class="fas fa-calendar-check fa-3x opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rooms Card -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card text-white bg-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-white-50">Rooms</div>
+                            <div class="display-6">{{ total_rooms }}</div>
+                            <div class="small">
+                                Available: {{ available_rooms }} | Occupied: {{ occupied_rooms }}
+                            </div>
+                        </div>
+                        <i class="fas fa-bed fa-3x opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Occupancy Rate Card -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card text-white bg-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-white-50">Occupancy Rate</div>
+                            <div class="display-6">{{ occupancy_rate|floatformat:1 }}%</div>
+                            <div class="small">
+                                Maintenance: {{ maintenance_rooms }}
+                            </div>
+                        </div>
+                        <i class="fas fa-chart-pie fa-3x opacity-25"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Card 2 -->
-    <div class="col-md-6 col-lg-3">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-header">Total Reservations</div>
-            <div class="card-body">
-                <h5 class="card-title">{{ total_reservations }}</h5>
-                <p class="card-text">Number of reservations made.</p>
-            </div>
+    <!-- Room Type Statistics -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-chart-bar me-1"></i>
+            Room Type Statistics
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Room Type</th>
+                        <th>Total Rooms</th>
+                        <th>Occupied</th>
+                        <th>Occupancy Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in room_type_stats %}
+                    <tr>
+                        <td>{{ stat.name }}</td>
+                        <td>{{ stat.total }}</td>
+                        <td>{{ stat.occupied }}</td>
+                        <td>{{ stat.occupancy_rate|floatformat:1 }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Card 3 -->
-    <div class="col-md-6 col-lg-3">
-        <div class="card text-white bg-warning mb-3">
-            <div class="card-header">Available Rooms</div>
-            <div class="card-body">
-                <h5 class="card-title">{{ total_rooms }}</h5>
-                <p class="card-text">Total number of rooms available.</p>
-            </div>
+    <!-- Recent Reservations -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-list me-1"></i>
+            Recent Reservations
         </div>
-    </div>
-
-    <!-- Card 4 -->
-    <div class="col-md-6 col-lg-3">
-        <div class="card text-white bg-danger mb-3">
-            <div class="card-header">Employees</div>
-            <div class="card-body">
-                <h5 class="card-title">{{ total_employees }}</h5>
-                <p class="card-text">Number of employees in the system.</p>
-            </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Guest</th>
+                        <th>Check In</th>
+                        <th>Check Out</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reservation in recent_reservations %}
+                    <tr>
+                        <td>{{ reservation.guest.full_name }}</td>
+                        <td>{{ reservation.check_in_date }}</td>
+                        <td>{{ reservation.check_out_date }}</td>
+                        <td>
+                            <span class="badge {% if reservation.status == 'checked_in' %}bg-success{% elif reservation.status == 'pending' %}bg-warning{% elif reservation.status == 'checked_out' %}bg-secondary{% endif %}">
+                                {{ reservation.status }}
+                            </span>
+                        </td>
+                        <td>${{ reservation.bill_set.first.total_amount|default:"0.00"|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
-
-<!-- Chart Section -->
-<div class="mt-4">
-    <h3>Performance Overview</h3>
-    <canvas id="revenueChart"></canvas>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Revenue Chart Example
-    const ctx = document.getElementById('revenueChart').getContext('2d');
-    const revenueChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['January', 'February', 'March', 'April', 'May'],
-            datasets: [{
-                label: 'Revenue',
-                data: [1200, 1900, 3000, 5000, 2500],
-                borderColor: '#007bff',
-                fill: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                }
-            },
-            scales: {
-                x: {
-                    display: true,
-                    title: {
-                        display: true,
-                        text: 'Month'
-                    }
-                },
-                y: {
-                    display: true,
-                    title: {
-                        display: true,
-                        text: 'Revenue ($)'
-                    }
-                }
-            }
-        }
-    });
-</script>
 {% endblock %}
