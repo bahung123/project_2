@@ -1,0 +1,24 @@
+{% if messages %}
+{% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+{% endfor %}
+{% endif %}
+{% block extra_scripts %}
+<script>
+    // Auto dismiss alerts after 2 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                // Create bootstrap alert instance
+                const bsAlert = new bootstrap.Alert(alert);
+                // Close alert
+                bsAlert.close();
+            });
+        }, 2000); // 2000ms = 2 seconds
+    });
+</script>
+{% endblock %}

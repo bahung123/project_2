@@ -2,6 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
+    {% include 'include/messages.html'%}
     {% if action == 'view' %}
     <!-- Chi tiết nhân viên -->
     <h1>Guest Details: {{ Guest.full_name }}</h1>
@@ -32,14 +33,6 @@
 
     {% elif action == 'edit' %}
     <!-- Chỉnh sửa khách hàng  -->
-    {% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
-    {% endif %}
     <h1>Edit Guest: {{ guest.full_name }}</h1>
     <form method="POST">
         {% csrf_token %}
@@ -113,26 +106,13 @@
         </div>
         <button type="submit" class="btn btn-primary">Add Guest</button>
     </form>
-    
-    
-
-
     {% else %}
 
 
     <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
         <h1 class="section-title text-center text-primary text-uppercase">Guest</h1>
     </div>
-    {% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
-    {% endif %}
-
-    <!-- Thanh tìm kiếm -->
+     <!-- Thanh tìm kiếm -->
     <form method="GET" action="{% url 'guest_list' %}" class="mb-3">
     <div class="input-group">
         <input type="text" class="form-control" placeholder="Search by Full Name or Email" name="search" value="{{ search_query }}">

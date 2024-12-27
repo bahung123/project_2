@@ -2,6 +2,7 @@
 {% load static %}
 {% block content %}
 <div class="container mt-4">
+    {% include 'include/messages.html'%}
     {% if action == 'view' %}
     <!-- Chi tiết chi nhánh -->
     <h1>Branch Details: {{ branch.name }}</h1>
@@ -28,14 +29,7 @@
 
     {% elif action == 'edit' %}
     <!-- Chỉnh sửa chi nhánh -->
-    {% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
-    {% endif %}
+
     <h1>Edit Branch: {{ branch.name }}</h1>
     <form method="POST">
         {% csrf_token %}
@@ -93,15 +87,6 @@
 
     {% else %}
     <h1>Branch List</h1>
-    {% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
-    {% endif %}
-
     <!-- Thanh tìm kiếm -->
     <form method="GET" action="{% url 'branch_list' %}" class="mb-3">
     <div class="input-group">

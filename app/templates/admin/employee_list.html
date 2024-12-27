@@ -2,6 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
+    {% include 'include/messages.html'%}
     <!-- Chi tiết nhân viên -->
     {% if action == 'view' %}
     <h1>Employee Details: {{ employee.full_name }}</h1>
@@ -43,14 +44,6 @@
 
     <!-- Chỉnh sửa nhân viên -->
     {% elif action == 'edit' %}
-    {% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
-    {% endif %}
     <h1>Edit Employee: {{ employee.full_name }}</h1>
     <form method="POST">
         {% csrf_token %}
@@ -167,15 +160,6 @@
 
 
     <h1>Employee List</h1>
-    {% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
-    {% endif %}
-
     <!-- Thanh tìm kiếm -->
     <form method="GET" action="{% url 'employee_list' %}" class="mb-3">
     <div class="input-group">
