@@ -46,12 +46,13 @@ def feedback_view(request, reservation_id):
                 feedback.save()
                 messages.success(request, 'Feedback updated successfully!')
             else:
-                # Create new feedback
+                # Create new feedback with created_at
                 Feedback.objects.create(
                     guest=guest,
                     reservation=reservation,
                     rating=rating,
-                    comment=comment
+                    comment=comment,
+                    created_at=now()  # Add this line to set created_at
                 )
                 messages.success(request, 'Thank you for your feedback!')
 

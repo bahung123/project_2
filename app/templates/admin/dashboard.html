@@ -1,10 +1,35 @@
 {% extends 'admin/base_admin.html' %}
+{% load static %}
 
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+<!-- Thêm vào đầu file -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Rest of your existing dashboard content -->
 <div class="container-fluid px-4">
     <h1 class="mt-4 mb-4">Dashboard</h1>
+
+    <!-- Branch Filter -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <form method="GET" class="d-flex align-items-center">
+                <label class="me-2">Branch:</label>
+                <select name="branch" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Branches</option>
+                    {% for branch in branches %}
+                        <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch %}selected{% endif %}>
+                            {{ branch.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <!-- Preserve other filters -->
+                <input type="hidden" name="period" value="{{ selected_period }}">
+                <input type="hidden" name="year" value="{{ selected_year }}">
+            </form>
+        </div>
+    </div>
 
     <!-- Revenue Cards Row -->
     <div class="row g-4 mb-4">
@@ -108,41 +133,72 @@
             </table>
         </div>
     </div>
-
-    <!-- Recent Reservations -->
+    <!-- Revenue Chart -->
     <div class="card mb-4">
         <div class="card-header">
-            <i class="fas fa-list me-1"></i>
-            Recent Reservations
+            <h5 class="card-title">Revenue Analytics</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <form method="GET" class="d-flex gap-2">
+                        <select name="period" class="form-select" onchange="this.form.submit()">
+                            <option value="month" {% if selected_period == 'month' %}selected{% endif %}>Monthly</option>
+                            <option value="year" {% if selected_period == 'year' %}selected{% endif %}>Yearly</option>
+                        </select>
+                        {% if selected_period != 'year' %}
+                        <select name="year" class="form-select" onchange="this.form.submit()">
+                            {% for year in years %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
+                        <!-- Add hidden branch input to preserve branch filter -->
+                        <input type="hidden" name="branch" value="{{ selected_branch }}">
+                    </form>
+                </div>
+            </div>
         </div>
         <div class="card-body">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Guest</th>
-                        <th>Check In</th>
-                        <th>Check Out</th>
-                        <th>Status</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reservation in recent_reservations %}
-                    <tr>
-                        <td>{{ reservation.guest.full_name }}</td>
-                        <td>{{ reservation.check_in_date }}</td>
-                        <td>{{ reservation.check_out_date }}</td>
-                        <td>
-                            <span class="badge {% if reservation.status == 'checked_in' %}bg-success{% elif reservation.status == 'pending' %}bg-warning{% elif reservation.status == 'checked_out' %}bg-secondary{% endif %}">
-                                {{ reservation.status }}
-                            </span>
-                        </td>
-                        <td>${{ reservation.bill_set.first.total_amount|default:"0.00"|floatformat:2 }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <canvas id="revenueChart"></canvas>
         </div>
     </div>
 </div>
+
+<!-- Thêm script để vẽ biểu đồ -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('revenueChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Revenue',
+                data: {{ chart_values|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Revenue Overview'
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
