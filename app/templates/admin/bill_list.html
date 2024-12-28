@@ -14,16 +14,34 @@
 
         <!-- Search and Filter -->
         <div class="row mb-4 align-items-center">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <form method="GET" action="{% url 'bill_list' %}" class="input-group">
                     <input type="text" name="search" class="form-control" placeholder="Search bills..." value="{{ search_query }}">
                     <button type="submit" class="btn btn-primary">Search</button>
                 </form>
             </div>
             <div class="col-md-4">
+                <form method="GET" action="{% url 'bill_list' %}" id="branchForm">
+                    <select name="branch" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Branches</option>
+                        {% for branch in branches %}
+                            <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch %}selected{% endif %}>
+                                {{ branch.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if search_query %}
+                        <input type="hidden" name="search" value="{{ search_query }}">
+                    {% endif %}
+                </form>
+            </div>
+            <div class="col-md-4">
                 <form method="GET" action="{% url 'bill_list' %}" id="statusForm">
                     {% if search_query %}
                         <input type="hidden" name="search" value="{{ search_query }}">
+                    {% endif %}
+                    {% if selected_branch %}
+                        <input type="hidden" name="branch" value="{{ selected_branch }}">
                     {% endif %}
                     <select name="paid_status" class="form-select" onchange="document.getElementById('statusForm').submit()">
                         <option value="">All Payment Status</option>

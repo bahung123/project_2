@@ -14,30 +14,44 @@ from django.core.paginator import Paginator
 
 @login_required 
 def employee_list(request, pk=None):
-    action = request.GET.get('action', 'list')  # Lấy action từ query string (mặc định là 'list')
-    search_query = request.GET.get('search', '')  # Lấy query tìm kiếm từ URL
-    context = {'action': action, 'search_query': search_query}
+    action = request.GET.get('action', 'list')
+    search_query = request.GET.get('search', '')
+    selected_branch = request.GET.get('branch', '')
+    context = {
+        'action': action, 
+        'search_query': search_query,
+        'selected_branch': selected_branch
+    }
     
     if action == 'list':
-        # Hiển thị danh sách nhân viên
+        # Get all branches for filter dropdown
+        branches = Branch.objects.all()
+        context['branches'] = branches
+
+        # Base query
+        employees = Employee.objects.all()
+
+        # Apply search filter
         if search_query:
-            employees = Employee.objects.filter(
-                Q(full_name__icontains=search_query) |  # Tìm kiếm theo tên đầy đủ
-                Q(email__icontains=search_query)        # Tìm kiếm theo email
+            employees = employees.filter(
+                Q(full_name__icontains=search_query) |
+                Q(email__icontains=search_query)
             )
-        else:
-            employees = Employee.objects.all()  # Lấy tất cả nhân viên nếu không có tìm kiếm
         
-        # Phân trang
-        paginator = Paginator(employees, 10)
+        # Apply branch filter
+        if selected_branch:
+            employees = employees.filter(branch_id=selected_branch)
+        
+        # Pagination
+        paginator = Paginator(employees, 10) 
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
-        context={
+        
+        context.update({
             'employees': page_obj,
-            'search_query': search_query,
             'page_obj': page_obj,
-        }
-
+        })
+        
         return render(request, 'admin/employee_list.html', context)
 
     

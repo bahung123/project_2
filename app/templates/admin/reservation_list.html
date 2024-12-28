@@ -14,25 +14,46 @@
 
         <!-- Search and Filter -->
         <div class="row mb-4 align-items-center">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <form method="GET" action="{% url 'reservation_list' %}" class="input-group">
                     <input type="text" name="search" class="form-control" placeholder="Search reservations..." value="{{ search_query }}">
                     <button type="submit" class="btn btn-primary">Search</button>
                 </form>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <form method="GET" action="{% url 'reservation_list' %}" id="statusForm">
-                    {% if search_query %}
-                        <input type="hidden" name="search" value="{{ search_query }}">
-                    {% endif %}
-                    <select name="status" class="form-select" onchange="document.getElementById('statusForm').submit()">
-                        <option value="">All Status</option>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Statuses</option>
                         {% for status_value, status_label in status_choices %}
                             <option value="{{ status_value }}" {% if status == status_value %}selected{% endif %}>
                                 {{ status_label }}
                             </option>
                         {% endfor %}
                     </select>
+                    {% if search_query %}
+                        <input type="hidden" name="search" value="{{ search_query }}">
+                    {% endif %}
+                    {% if selected_branch %}
+                        <input type="hidden" name="branch" value="{{ selected_branch }}">
+                    {% endif %}
+                </form>
+            </div>
+            <div class="col-md-3">
+                <form method="GET" action="{% url 'reservation_list' %}" id="branchForm">
+                    <select name="branch" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Branches</option>
+                        {% for branch in branches %}
+                            <option value="{{ branch.id }}" {% if selected_branch == branch.id|stringformat:"s" %}selected{% endif %}>
+                                {{ branch.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if search_query %}
+                        <input type="hidden" name="search" value="{{ search_query }}">
+                    {% endif %}
+                    {% if status %}
+                        <input type="hidden" name="status" value="{{ status }}">
+                    {% endif %}
                 </form>
             </div>
         </div>

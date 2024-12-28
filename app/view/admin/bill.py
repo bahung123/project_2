@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, F
 from django.contrib import messages
-from app.models import Bill, ServiceUsage
+from app.models import Bill, ServiceUsage, Branch
 from datetime import datetime
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
@@ -30,6 +30,10 @@ except ImportError:
 @login_required
 def bill_list(request):
     search_query = request.GET.get('search', '')
+    branch_filter = request.GET.get('branch', '')
+    
+    # Get all branches for filter dropdown
+    branches = Branch.objects.all()
     
     # Annotate bills with service usage totals
     bills = Bill.objects.annotate(
@@ -44,7 +48,13 @@ def bill_list(request):
             Q(reservation__id__icontains=search_query)
         )
     
-    # Get service usage totals for each reservation
+    # Apply branch filter
+    if branch_filter:
+        bills = bills.filter(
+            reservation__reservationroom__room__branch_id=branch_filter
+        ).distinct()
+    
+    # Get service usage totals
     for bill in bills:
         bill.service_total = ServiceUsage.objects.filter(
             reservation=bill.reservation
@@ -59,6 +69,8 @@ def bill_list(request):
     context = {
         'bills': bills,
         'search_query': search_query,
+        'branches': branches,
+        'selected_branch': branch_filter,
         'active': 'bills'
     }
     return render(request, 'admin/bill_list.html', context)

@@ -4,7 +4,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, F, Sum
 from django.contrib import messages
 from django.utils.timezone import now
-from app.models import Reservation, Bill, ServiceUsage
+from app.models import Reservation, Bill, ServiceUsage, Branch
 from datetime import datetime, time
 from decimal import Decimal
 
@@ -26,6 +26,10 @@ def reservation_list(request):
         # Get search and filter parameters
         search_query = request.GET.get('search', '').strip()
         status_filter = request.GET.get('status', '').strip()
+        branch_filter = request.GET.get('branch', '').strip()
+
+        # Get all branches for filter dropdown
+        branches = Branch.objects.all()
 
         # Base queryset with newest reservations first
         reservations = Reservation.objects.all().order_by('-book_date', '-id')
@@ -42,6 +46,12 @@ def reservation_list(request):
         # Apply status filter
         if status_filter:
             reservations = reservations.filter(status=status_filter)
+
+        # Apply branch filter
+        if branch_filter:
+            reservations = reservations.filter(
+                reservationroom__room__branch_id=branch_filter
+            ).distinct()
 
         # Pagination
         page_size = 10
@@ -60,12 +70,12 @@ def reservation_list(request):
                 ('pending', 'Pending'),
                 ('confirmed', 'Confirmed'),
                 ('cancelled', 'Cancelled'),
-                ('checked_in', 'Checked In'),
-                ('checked_out', 'Checked Out'),
             ],
             'total_reservations': Reservation.objects.count(),
             'filtered_count': reservations.count(),
-            'title': 'Reservation List'
+            'title': 'Reservation List',
+            'branches': branches,
+            'selected_branch': branch_filter,
         }
 
         return render(request, 'admin/reservation_list.html', context)

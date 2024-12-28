@@ -160,15 +160,34 @@
 
 
     <h1>Employee List</h1>
-    <!-- Thanh tìm kiếm -->
-    <form method="GET" action="{% url 'employee_list' %}" class="mb-3">
-    <div class="input-group">
-        <input type="text" class="form-control" placeholder="Search by Full Name or Email" name="search" value="{{ search_query }}">
-        <button class="btn btn-outline-secondary" type="submit">Search</button>
+    <!-- Thanh tìm kiếm và lọc -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <form method="GET" action="{% url 'employee_list' %}" class="input-group">
+                <input type="text" class="form-control" placeholder="Search by Full Name or Email" name="search" value="{{ search_query }}">
+                <button class="btn btn-outline-secondary" type="submit">Search</button>
+            </form>
+        </div>
+        <div class="col-md-4">
+            <form method="GET" action="{% url 'employee_list' %}">
+                <select name="branch" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Branches</option>
+                    {% for branch in branches %}
+                        <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch %}selected{% endif %}>
+                            {{ branch.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <!-- Preserve search query when filtering by branch -->
+                {% if search_query %}
+                    <input type="hidden" name="search" value="{{ search_query }}">
+                {% endif %}
+            </form>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'employee_detail' 0 %}?action=add" class="btn btn-primary w-100">Add Employee</a> 
+        </div>
     </div>
-    </form>
-    <!-- thêm nhân viên -->
-        <a href="{% url 'employee_detail' 0 %}?action=add" class="btn btn-primary">Add Employee</a>
 
     <!-- Bảng danh sách nhân viên -->
     <table class="table table-striped mt-3">
