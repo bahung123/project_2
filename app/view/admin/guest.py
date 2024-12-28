@@ -14,9 +14,12 @@ from django.core.paginator import Paginator
 
 @login_required
 def guest_list(request, pk=None):
-    action = request.GET.get('action', 'list')  # Lấy action từ query string (mặc định là 'list')
+    action = request.GET.get('action', 'list')
     search_query = request.GET.get('search', '')
-    context = {'action': action, 'search_query': search_query}
+    context = {
+        'action': action, 
+        'search_query': search_query,
+    }
 
     if action == 'list':
         # Hiển thị danh sách khách hàng
@@ -37,6 +40,7 @@ def guest_list(request, pk=None):
         'guests': page_obj,
         'search_query': search_query,
         'page_obj': page_obj,
+        'active': 'guests'
     }
         return render(request, 'admin/guest_list.html', context)
 
@@ -169,4 +173,3 @@ def guest_list(request, pk=None):
     else:
         messages.error(request, 'Invalid action')
         return redirect('guest_list')
-

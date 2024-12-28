@@ -20,6 +20,7 @@ def room_type_list(request, pk=None):
 
     # Base context that will be used in all actions
     context = {
+        'active': 'room_types',
         'action': action,
         'search_query': search_query,
         'current_page': page

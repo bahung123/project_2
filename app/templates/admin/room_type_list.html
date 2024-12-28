@@ -7,7 +7,7 @@
         {% include "include/messages.html" %}
 
         <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
-            <h1 class="section-title text-center text-primary text-uppercase">Room Type</h1>
+            <h1 class="section-title text-center text-primary">Room type</h1>
         </div>
 
         <!-- Thanh tìm kiếm và nút Add Room -->
@@ -29,7 +29,6 @@
             {% if action == 'view' %}
                 <!-- Hiển thị chi tiết loại phòng -->
                 <div class="col-12">
-                    <h1>Room Type Details: {{ room_type.name }}</h1>
                     <table class="table mt-3">
                         <tr>
                             <th>Name</th>
@@ -78,7 +77,6 @@
                 {% elif action == 'edit' %}
                 <!-- Form chỉnh sửa -->
                 <div class="col-12">
-                    <h1>Edit Room Type: {{ room_type.name }}</h1>
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                         

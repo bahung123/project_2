@@ -31,7 +31,7 @@
                             <i class="fas fa-user-circle"></i> Account
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="{% url 'account_info' %}">Account Info</a></li>
+                            <li><a class="dropdown-item" href="{% url 'account_info_admin' %}">Account Info</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
                         </ul>
@@ -76,6 +76,11 @@
                         </a>
                     </li>
                     {% endif %}
+                    <li>
+                        <a class="nav-link {% if active == 'room_types' %}active{% endif %}" href="{% url 'room_type_list' %}">
+                            <i class="fas fa-door-open"></i> Room Type
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link {% if active == 'rooms' %}active{% endif %}" href="{% url 'room_list' %}">
                             <i class="fas fa-door-open"></i> Rooms

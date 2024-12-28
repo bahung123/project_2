@@ -11,12 +11,13 @@ from .view.user.account_info import account_info, update_account_info, change_pa
 from .view.user.booking_history import booking_history
 from .view.user.room_detail import room_detail_user
 from .view.user.feedback import feedback_view
+from .view.admin import account_info_admin
 
 # Import admin views
 from .view.admin import (
     dashboard, employee, guest, room_type, 
     room as admin_room, service as admin_service, 
-    base_admin, reservation, bill, branch, service_usage, feedback
+    base_admin, reservation, bill, branch, service_usage, feedback, 
 )
 
 urlpatterns = [
@@ -74,4 +75,10 @@ urlpatterns = [
 
     # Feedback URLs
     path('base_admin/feedbacks/', feedback.feedback_list, name='admin_feedback_list'),
+
+
+    # Account Info URLs
+    path('base_admin/account_info/', account_info_admin.account_info_admin, name='account_info_admin'),
+    path('base_admin/update_account_info/', account_info_admin.update_account_info_admin, name='update_account_info_admin'),
+    path('base_admin/change_password/', account_info_admin.change_password_admin, name='change_password_admin'),
 ]

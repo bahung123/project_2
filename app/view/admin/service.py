@@ -16,7 +16,7 @@ from django.core.paginator import Paginator
 def service_list(request, pk=None):
     action = request.GET.get('action', 'list')
     search_query = request.GET.get('search', '')
-    context = {'action': action, 'search_query': search_query}
+    context = {'action': action, 'search_query': search_query, 'active': 'services'}
 
     if action == 'list':
         # Hiển thị danh sách dịch vụ với phân trang

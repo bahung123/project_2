@@ -9,7 +9,7 @@
 
         <!-- Tiêu đề -->
         <div class="text-center mb-5">
-            <h1 class="section-title text-primary text-uppercase">Room List</h1>
+            <h1 class="section-title text-primary">Room</h1>
         </div>
 
         <!-- Thanh tìm kiếm và chọn chi nhánh -->
@@ -45,7 +45,6 @@
             {% if action == 'view' %}
             <!-- Chi tiết phòng -->
             <div class="col-12">
-                <h2 class="text-center mb-4">Room Details: {{ room.room_number }}</h2>
                 <table class="table table-bordered">
                     <tr>
                         <th>Room Number</th>
@@ -102,7 +101,6 @@
                 {% elif action == 'edit' %}
                 <!-- Form chỉnh sửa phòng -->
                 <div class="col-12">
-                    <h1>Edit Room: {{ room.room_number }}</h1>
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                 

@@ -66,6 +66,7 @@ def bill_list(request):
     bills = paginator.get_page(page)
 
     context = {
+        'active': 'payments',
         'bills': bills,
         'branches': branches,
         'search_query': search_query,

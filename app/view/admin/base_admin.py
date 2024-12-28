@@ -18,6 +18,7 @@ from django.core.paginator import Paginator
 def base_admin(request):
     # Get statistics for dashboard
     context = {
+        'active' : 'base_admin',
         'total_rooms': Room.objects.count(),
         'active_reservations': Reservation.objects.filter(status='active').count(),
         'total_guests': Guest.objects.count(),

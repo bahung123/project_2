@@ -5,7 +5,9 @@
     {% include 'include/messages.html'%}
     {% if action == 'view' %}
     <!-- Chi tiết chi nhánh -->
-    <h1>Branch Details: {{ branch.name }}</h1>
+    <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+        <h1 class="section-title text-center text-primary">Detail: {{ branch.name }}</h1>
+    </div>
     <table class="table mt-3">
         <tr>
             <th>Name</th>
@@ -30,7 +32,9 @@
     {% elif action == 'edit' %}
     <!-- Chỉnh sửa chi nhánh -->
 
-    <h1>Edit Branch: {{ branch.name }}</h1>
+    <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+        <h1 class="section-title text-center text-primary">Edit: {{ branch.name }}</h1>
+    </div>
     <form method="POST">
         {% csrf_token %}
         <div class="mb-3">
@@ -86,7 +90,9 @@
     </form>
 
     {% else %}
-    <h1>Branch List</h1>
+    <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+        <h1 class="section-title text-center text-primary">Branch</h1>
+    </div>
     <!-- Thanh tìm kiếm -->
     <form method="GET" action="{% url 'branch_list' %}" class="mb-3">
     <div class="input-group">

@@ -5,7 +5,9 @@
     {% include 'include/messages.html'%}
     {% if action == 'view' %}
     <!-- Chi tiết nhân viên -->
-    <h1>Guest Details: {{ Guest.full_name }}</h1>
+    <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+        <h1 class="section-title text-center text-primary ">Detail:{{guest.full_name}} </h1>
+    </div>
     <table class="table mt-3">
         <tr>
             <th>Full Name</th>
@@ -33,7 +35,9 @@
 
     {% elif action == 'edit' %}
     <!-- Chỉnh sửa khách hàng  -->
-    <h1>Edit Guest: {{ guest.full_name }}</h1>
+    <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+        <h1 class="section-title text-center text-primary">Edit: {{ guest.full_name }}</h1>
+    </div>
     <form method="POST">
         {% csrf_token %}
         <div class="mb-3">
@@ -110,7 +114,7 @@
 
 
     <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
-        <h1 class="section-title text-center text-primary text-uppercase">Guest</h1>
+        <h1 class="section-title text-center text-primary">Guest</h1>
     </div>
      <!-- Thanh tìm kiếm -->
     <form method="GET" action="{% url 'guest_list' %}" class="mb-3">

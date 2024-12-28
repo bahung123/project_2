@@ -18,6 +18,7 @@ def employee_list(request, pk=None):
     search_query = request.GET.get('search', '')
     selected_branch = request.GET.get('branch', '')
     context = {
+        'active': 'employees',
         'action': action, 
         'search_query': search_query,
         'selected_branch': selected_branch
@@ -71,6 +72,7 @@ def employee_list(request, pk=None):
             full_name = request.POST.get('full_name')
             phone_number = request.POST.get('phone_number')
             email = request.POST.get('email')
+            address = request.POST.get('address')
             position = request.POST.get('position')
             department = request.POST.get('department')
             salary = request.POST.get('salary')
@@ -83,6 +85,7 @@ def employee_list(request, pk=None):
             employee.full_name = full_name
             employee.phone_number = phone_number
             employee.email = email
+            employee.address = address
             employee.position = position
             employee.department = department
             employee.salary = salary
@@ -133,6 +136,7 @@ def employee_list(request, pk=None):
             full_name = request.POST.get('full_name')
             phone_number = request.POST.get('phone_number')
             email = request.POST.get('email')
+            address = request.POST.get('address')
             position = request.POST.get('position')
             department = request.POST.get('department')
             salary = request.POST.get('salary')
@@ -187,6 +191,7 @@ def employee_list(request, pk=None):
                 full_name=full_name,
                 phone_number=phone_number,
                 email=email,
+                address= address,
                 position=position,
                 department=department,
                 salary=salary,

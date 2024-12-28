@@ -66,6 +66,7 @@ def service_usage_list(request):
     service_usages = paginator.get_page(page)
     
     context = {
+        'active': 'service_usage',
         'service_usages': service_usages,
         'search_query': search_query,
         'action': 'list'

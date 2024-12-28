@@ -20,6 +20,7 @@ def room_list(request, pk=None):
     branch_id = request.GET.get('branch')  # Nhận giá trị chi nhánh từ URL
     page = request.GET.get('page', '1')  # Lấy số trang hiện tại
     context = {
+        'active': 'rooms',
         'action': action,
         'search_query': search_query,
         'selected_branch_id': branch_id,

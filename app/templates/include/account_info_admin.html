@@ -1,0 +1,64 @@
+{% extends "admin/base_admin.html" %}
+{% load static %}
+
+{% block content %}
+{% include 'include/messages.html'%}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2 class="text-center">Account Information</h2>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Personal Information</h5>
+                    <form method="POST" action="{% url 'update_account_info_admin' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" value="{{ employee.full_name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ employee.phone_number }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="address" name="address" value="{{ employee.address }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Info</button>
+                    </form>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Change Password</h5>
+                    <form method="POST" action="{% url 'change_password_admin' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="old_password" class="form-label">Old Password</label>
+                            <input type="password" class="form-control" id="old_password" name="old_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_new_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Change Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% include 'include/footer.html'%}

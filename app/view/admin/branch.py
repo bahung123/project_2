@@ -23,6 +23,7 @@ def branch_list(request):
     branches = paginator.get_page(page)
     
     context = {
+        'active': 'branches',
         'branches': branches,
         'search_query': search_query
     }
