@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, F
 from django.contrib import messages
-from app.models import Bill, ServiceUsage, Branch
+from app.models import Bill, ServiceUsage, Branch, Employee
 from datetime import datetime
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
@@ -32,47 +32,46 @@ def bill_list(request):
     search_query = request.GET.get('search', '')
     branch_filter = request.GET.get('branch', '')
     
-    # Get all branches for filter dropdown
-    branches = Branch.objects.all()
+    # Get current employee info
+    current_employee = Employee.objects.filter(user_id=request.user.id).first()
     
-    # Annotate bills with service usage totals
-    bills = Bill.objects.annotate(
-        service_total=Sum('reservation__serviceusage__total')
-    ).select_related(
-        'reservation__guest'
-    )
+    # Get branches based on user role
+    if request.user.is_superuser:
+        branches = Branch.objects.all()
+        bills = Bill.objects.select_related('reservation__guest')
+    else:
+        # Regular employee can only see their branch
+        branches = Branch.objects.filter(id=current_employee.branch.id)
+        bills = Bill.objects.filter(
+            reservation__reservationroom__room__branch=current_employee.branch
+        ).select_related('reservation__guest').distinct()
+        # Set branch filter to employee's branch
+        branch_filter = str(current_employee.branch.id)
 
+    # Apply search filter
     if search_query:
         bills = bills.filter(
             Q(reservation__guest__full_name__icontains=search_query) |
             Q(reservation__id__icontains=search_query)
         )
-    
-    # Apply branch filter
-    if branch_filter:
+
+    # Apply branch filter (admin only)
+    if request.user.is_superuser and branch_filter:
         bills = bills.filter(
             reservation__reservationroom__room__branch_id=branch_filter
         ).distinct()
-    
-    # Get service usage totals
-    for bill in bills:
-        bill.service_total = ServiceUsage.objects.filter(
-            reservation=bill.reservation
-        ).aggregate(
-            total=Sum('total')
-        )['total'] or 0
-    
+
     paginator = Paginator(bills, 10)
     page = request.GET.get('page')
     bills = paginator.get_page(page)
-    
+
     context = {
         'bills': bills,
-        'search_query': search_query,
         'branches': branches,
-        'selected_branch': branch_filter,
-        'active': 'bills'
+        'search_query': search_query,
+        'selected_branch': branch_filter
     }
+    
     return render(request, 'admin/bill_list.html', context)
 
 @login_required

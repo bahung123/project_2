@@ -20,6 +20,7 @@
                     <button type="submit" class="btn btn-primary">Search</button>
                 </form>
             </div>
+            {% if user.is_superuser %}
             <div class="col-md-4">
                 <form method="GET" action="{% url 'bill_list' %}" id="branchForm">
                     <select name="branch" class="form-select" onchange="this.form.submit()">
@@ -35,21 +36,7 @@
                     {% endif %}
                 </form>
             </div>
-            <div class="col-md-4">
-                <form method="GET" action="{% url 'bill_list' %}" id="statusForm">
-                    {% if search_query %}
-                        <input type="hidden" name="search" value="{{ search_query }}">
-                    {% endif %}
-                    {% if selected_branch %}
-                        <input type="hidden" name="branch" value="{{ selected_branch }}">
-                    {% endif %}
-                    <select name="paid_status" class="form-select" onchange="document.getElementById('statusForm').submit()">
-                        <option value="">All Payment Status</option>
-                        <option value="paid" {% if paid_status == 'paid' %}selected{% endif %}>Paid</option>
-                        <option value="pending" {% if paid_status == 'pending' %}selected{% endif %}>Pending</option>
-                    </select>
-                </form>
-            </div>
+            {% endif %}
         </div>
 
         <!-- Table content -->

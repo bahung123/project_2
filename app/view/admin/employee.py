@@ -164,6 +164,9 @@ def employee_list(request, pk=None):
                 messages.error(request, 'Password does not match')
                 return render(request, 'admin/employee_list.html', context)
 
+            # Get superuser status from checkbox
+            is_superuser = request.POST.get('is_superuser') == 'on'
+            
             # Tạo tài khoản AuthUser
             user = AuthUser.objects.create(
                 username=username,
@@ -172,7 +175,7 @@ def employee_list(request, pk=None):
                 last_name='',
                 email=email,
                 is_staff=1,  # Đặt giá trị is_staff
-                is_superuser=0,
+                is_superuser=1 if is_superuser else 0,  # Set superuser based on checkbox
                 is_active=1,
                 date_joined=timezone.now()
             )

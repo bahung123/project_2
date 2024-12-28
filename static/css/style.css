@@ -34,3 +34,55 @@
 .text-white important {
     color: orange;
 }
+    
+
+
+body {
+    background-color: #f4f6f9;
+    min-height: 100vh;
+    font-family: 'Heebo', sans-serif;
+    padding-top: 56px;
+}
+.sidebar {
+    background-color: #343a40;
+    color: #fff;
+    min-height: 100vh;
+    padding-top: 20px;
+}
+.sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 5px 0;
+    padding: 10px 15px;
+    border-radius: 4px;
+}
+.sidebar .nav-link.active, .sidebar .nav-link:hover {
+    background-color: #495057;
+}
+.navbar {
+    background-color: #6c757d;
+    color: white;
+}
+.navbar-brand {
+    color: white;
+    font-weight: 600;
+}
+.main-content {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+.alert {
+    border-radius: 5px;
+}
+.dashboard-card {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+.dashboard-card .card {
+    flex: 1;
+    min-width: 260px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

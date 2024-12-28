@@ -4,7 +4,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, F, Sum
 from django.contrib import messages
 from django.utils.timezone import now
-from app.models import Reservation, Bill, ServiceUsage, Branch
+from app.models import Reservation, Bill, ServiceUsage, Branch , Employee
 from datetime import datetime, time
 from decimal import Decimal
 
@@ -26,15 +26,30 @@ def reservation_list(request):
         # Get search and filter parameters
         search_query = request.GET.get('search', '').strip()
         status_filter = request.GET.get('status', '').strip()
-        branch_filter = request.GET.get('branch', '').strip()
+        
+        # Initialize variables
+        selected_branch = None
+        branches = None
 
-        # Get all branches for filter dropdown
-        branches = Branch.objects.all()
+        # Handle user permissions and branch access
+        if request.user.is_superuser:
+            # Superuser can see all branches
+            branches = Branch.objects.all()
+            selected_branch = request.GET.get('branch', '').strip()
+        else:
+            # Get employee record for non-superuser
+            try:
+                current_employee = Employee.objects.get(user_id=request.user.id)
+                branches = Branch.objects.filter(id=current_employee.branch.id)
+                selected_branch = str(current_employee.branch.id)
+            except Employee.DoesNotExist:
+                messages.error(request, 'No employee record found for this user.')
+                return redirect('login')
 
         # Base queryset with newest reservations first
         reservations = Reservation.objects.all().order_by('-book_date', '-id')
 
-        # Apply search filter
+        # Apply filters
         if search_query:
             reservations = reservations.filter(
                 Q(guest__full_name__icontains=search_query) |
@@ -43,50 +58,41 @@ def reservation_list(request):
                 Q(reservationroom__room__room_number__icontains=search_query)
             ).distinct()
 
-        # Apply status filter
         if status_filter:
             reservations = reservations.filter(status=status_filter)
 
-        # Apply branch filter
-        if branch_filter:
+        if selected_branch:
             reservations = reservations.filter(
-                reservationroom__room__branch_id=branch_filter
+                reservationroom__room__branch_id=selected_branch
             ).distinct()
 
         # Pagination
-        page_size = 10
-        paginator = Paginator(reservations, page_size)
-        page_number = request.GET.get('page', 1)
-        page_obj = paginator.get_page(page_number)
+        paginator = Paginator(reservations, 10)
+        page = request.GET.get('page')
+        reservations = paginator.get_page(page)
 
-        # Context data
         context = {
-            'reservations': page_obj,
-            'page_obj': page_obj,
+            'reservations': reservations,
             'search_query': search_query,
             'status': status_filter,
-            'active': 'reservations',
+            'branches': branches,
+            'selected_branch': selected_branch,
+            'is_admin': request.user.is_superuser,
             'status_choices': [
                 ('pending', 'Pending'),
                 ('confirmed', 'Confirmed'),
                 ('cancelled', 'Cancelled'),
+                ('checked_in', 'Checked In'),
+                ('checked_out', 'Checked Out'),
             ],
-            'total_reservations': Reservation.objects.count(),
-            'filtered_count': reservations.count(),
-            'title': 'Reservation List',
-            'branches': branches,
-            'selected_branch': branch_filter,
+            'active': 'reservations',
         }
 
         return render(request, 'admin/reservation_list.html', context)
 
     except Exception as e:
-        print(f"Error in reservation_list: {str(e)}")
         messages.error(request, f'Error loading reservations: {str(e)}')
-        return render(request, 'admin/reservation_list.html', {
-            'active': 'reservations',
-            'error': str(e)
-        })
+        return render(request, 'admin/reservation_list.html', {'error': str(e)})
 
 @login_required
 def reservation_delete(request, reservation_id):

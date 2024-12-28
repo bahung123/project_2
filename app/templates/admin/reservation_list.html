@@ -38,12 +38,13 @@
                     {% endif %}
                 </form>
             </div>
+            {% if user.is_superuser %}
             <div class="col-md-3">
                 <form method="GET" action="{% url 'reservation_list' %}" id="branchForm">
                     <select name="branch" class="form-select" onchange="this.form.submit()">
                         <option value="">All Branches</option>
                         {% for branch in branches %}
-                            <option value="{{ branch.id }}" {% if selected_branch == branch.id|stringformat:"s" %}selected{% endif %}>
+                            <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch %}selected{% endif %}>
                                 {{ branch.name }}
                             </option>
                         {% endfor %}
@@ -56,6 +57,7 @@
                     {% endif %}
                 </form>
             </div>
+            {% endif %}
         </div>
 
         <!-- Table content -->

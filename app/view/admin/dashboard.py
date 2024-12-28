@@ -23,10 +23,17 @@ def dashboard(request):
     # Get all branches for dropdown
     branches = Branch.objects.all()
 
-    # Base query for bills
-    bills_query = Bill.objects.filter(paid_status='paid')
+    # Define base filters
+    reservation_filter = {}
+    room_filter = {}
 
-    # Add branch filter using distinct() to avoid duplicates
+    # Add branch filter if selected
+    if branch_id:
+        reservation_filter['reservationroom__room__branch_id'] = branch_id
+        room_filter['branch_id'] = branch_id
+
+    # Base query for bills with branch filter
+    bills_query = Bill.objects.filter(paid_status='paid')
     if branch_id:
         bills_query = bills_query.filter(
             reservation__reservationroom__room__branch_id=branch_id
@@ -90,34 +97,36 @@ def dashboard(request):
         date_issued__gte=last_month
     ).aggregate(total=Sum('total_amount'))['total'] or 0
 
-    # Define reservation_filter
-    reservation_filter = {}
-
-    # Define room_filter
-    room_filter = {}
+    # Reservation statistics with branch filter
+    total_reservations = Reservation.objects.filter(**reservation_filter).distinct().count()
+    pending_reservations = Reservation.objects.filter(status='pending', **reservation_filter).distinct().count()
+    active_reservations = Reservation.objects.filter(status='checked_in', **reservation_filter).distinct().count()
+    completed_reservations = Reservation.objects.filter(status='checked_out', **reservation_filter).distinct().count()
     
-    # Reservation statistics using reservation_filter
-    total_reservations = Reservation.objects.filter(**reservation_filter).count()
-    pending_reservations = Reservation.objects.filter(status='pending', **reservation_filter).count()
-    active_reservations = Reservation.objects.filter(status='checked_in', **reservation_filter).count()
-    completed_reservations = Reservation.objects.filter(status='checked_out', **reservation_filter).count()
-    
-    # Room statistics using room_filter
+    # Room statistics with branch filter
     total_rooms = Room.objects.filter(**room_filter).count()
     available_rooms = Room.objects.filter(status='available', **room_filter).count()
     occupied_rooms = Room.objects.filter(status='occupied', **room_filter).count()
     maintenance_rooms = Room.objects.filter(status='maintenance', **room_filter).count()
+
+    # Guest count - filter by branch if selected
+    if branch_id:
+        total_guests = Guest.objects.filter(
+            reservation__reservationroom__room__branch_id=branch_id
+        ).distinct().count()
+        total_employees = Employee.objects.filter(branch_id=branch_id).count()
+    else:
+        total_guests = Guest.objects.count()
+        total_employees = Employee.objects.count()
     
-    # Guest and employee counts
-    total_guests = Guest.objects.count()
-    total_employees = Employee.objects.count()
-    
-    # Room type occupancy with pre-calculated rates
+    # Room type occupancy with branch filter
     room_type_stats = []
-    for stat in Room.objects.filter(**room_filter).values('room_type__name').annotate(
+    room_query = Room.objects.filter(**room_filter)
+    
+    for stat in room_query.values('room_type__name').annotate(
         total=Count('id'),
         occupied=Count('id', filter=Q(status='occupied'))
-    ):
+    ).exclude(room_type__name__isnull=True):
         occupancy_rate = (stat['occupied'] / stat['total'] * 100) if stat['total'] > 0 else 0
         room_type_stats.append({
             'name': stat['room_type__name'],
@@ -126,8 +135,11 @@ def dashboard(request):
             'occupancy_rate': occupancy_rate
         })
 
+    # Calculate overall occupancy rate for selected branch or all branches
+    occupancy_rate = (occupied_rooms / total_rooms * 100) if total_rooms > 0 else 0
+
     context = {
-        'branches': branches,  # Add branches to context
+        'branches': branches,
         'selected_branch': branch_id,
         'total_revenue': total_revenue,
         'monthly_revenue': monthly_revenue,
@@ -142,7 +154,7 @@ def dashboard(request):
         'total_guests': total_guests,
         'total_employees': total_employees,
         'room_type_stats': room_type_stats,
-        'occupancy_rate': (occupied_rooms / total_rooms * 100) if total_rooms > 0 else 0,
+        'occupancy_rate': occupancy_rate,
         'active': 'dashboard',
         'chart_labels': labels,
         'chart_values': values,
